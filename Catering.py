@@ -81,6 +81,25 @@ class DeliveryService(abc.ABC):
     def delivery():
         DeliveryService._process_delivery()
 
+    @staticmethod
+    def _cleanup_archived():
+        while True:
+            now = datetime.now()
+            to_remove = []
+            for key, value in STORAGE["delivery"].items():
+                if value[1] == "archived" and (now - value[2]).total_seconds() > 60:
+                    to_remove.append(key)
+
+            for order_id in to_remove:
+                del STORAGE["delivery"][order_id]
+                print(f"\n\t🗑️ Order {order_id} has been removed from STORAGE (archived over a minute ago)")
+
+            time.sleep(1)
+
+    @staticmethod
+    def cleanup():
+        DeliveryService._cleanup_archived()
+
     def _ship(self, delay: int):
         """all concrete .ship() MUST call that method!"""
 
@@ -155,32 +174,11 @@ class Scheduler:
                 self.ship_order(order[0])
 
 
-class CleanupWorker:
-    @staticmethod
-    def _cleanup_archived():
-        while True:
-            now = datetime.now()
-            to_remove = []
-            for key, value in STORAGE["delivery"].items():
-                if value[1] == "archived" and (now - value[2]).total_seconds() > 60:
-                    to_remove.append(key)
-
-            for order_id in to_remove:
-                del STORAGE["delivery"][order_id]
-                print(f"\n\t🗑️ Order {order_id} has been removed from STORAGE (archived over a minute ago)")
-
-            time.sleep(1)
-
-    @staticmethod
-    def cleanup():
-        CleanupWorker._cleanup_archived()
-
-
 def main():
     scheduler = Scheduler()
     threading.Thread(target=scheduler.process_orders, daemon=True).start()
     threading.Thread(target=DeliveryService.delivery, daemon=True).start()
-    threading.Thread(target=CleanupWorker.cleanup, daemon=True).start()
+    threading.Thread(target=DeliveryService.cleanup, daemon=True).start()
 
     while True:
         if order_details := input("Enter order details: "):
