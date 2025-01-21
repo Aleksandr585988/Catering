@@ -12,12 +12,13 @@
 - Manage dependencies...
 
 # SETUP
-activate virtual environment
-pipenv shell --python python3.11
+- activate virtual environment
+  - pipenv shell --python python3.11
 
 
-# generate `Pipfile.lock` file after adding dependencies
-pipenv lock
+- generate `Pipfile.lock` file after adding dependencies 
+  - pipenv lock
+  
 
-# install dependencies form `Pipfile.lock` file
-pipenv sync
+- install dependencies form `Pipfile.lock` file
+  - pipenv sync
