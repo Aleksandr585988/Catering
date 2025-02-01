@@ -168,10 +168,9 @@ VALUES
 '''
 
 
-# Выполнение запросов на создание таблиц и индексов
 cur.execute(create_tables_query)
 
-# Индексация для ускорения поиска граждан
+# Indexing to accelerate citizens' search
 index_queries = [
     "CREATE INDEX IF NOT EXISTS idx_service_usage_citizen_id ON service_usage(citizen_id);",
     "CREATE INDEX IF NOT EXISTS idx_program_enrollment_citizen_id ON program_enrollment(citizen_id);",
@@ -179,7 +178,7 @@ index_queries = [
     "CREATE INDEX IF NOT EXISTS idx_program_enrollment_program_id ON program_enrollment(program_id);"
 ]
 
-# Выполнение запросов для создания индексов
+
 for query in index_queries:
     try:
         cur.execute(query)
@@ -187,7 +186,7 @@ for query in index_queries:
     except psycopg2.errors.DuplicateObject:
         print(f"Index already exists: {query}")
 
-# Выполнение запросов на вставку данных
+
 cur.execute(insert_citizens_query)
 cur.execute(insert_public_services_query)
 cur.execute(insert_service_usage_query)
@@ -198,7 +197,7 @@ cur.execute(insert_gov_employees_query)
 cur.execute(insert_service_requests_query)
 
 
-# Создание материализованного представления для отслеживания ежемесячных тенденций использования услуг
+# Create a materialized view to track monthly service usage trends.
 cur.execute('''
 CREATE MATERIALIZED VIEW IF NOT EXISTS monthly_service_usage AS
 SELECT
@@ -213,14 +212,13 @@ ORDER BY
     usage_year, usage_month, service_id;
 ''')
 
-# Обновление материализованного представления
 cur.execute('REFRESH MATERIALIZED VIEW monthly_service_usage;')
 
 connection.commit()
 
 cur.close()
 
-# Теперь создадим новое соединение для выполнения VACUUM вне транзакции
+
 vacuum_connection = psycopg2.connect(
     dbname="catering_service",
     user="postgres",
@@ -229,16 +227,12 @@ vacuum_connection = psycopg2.connect(
     port="5432"
 )
 
-# Отключаем автоматическое начало транзакции
 vacuum_connection.autocommit = True
 
-# Выполняем VACUUM в новом соединении
 vacuum_cur = vacuum_connection.cursor()
 vacuum_cur.execute("VACUUM (VERBOSE, ANALYZE);")
 
-# Закрываем соединение для VACUUM
 vacuum_cur.close()
 vacuum_connection.close()
 
-# Закрываем основное соединение
 connection.close()
