@@ -1,4 +1,3 @@
-
 import uuid
 import random
 import abc
@@ -72,7 +71,9 @@ class DeliveryService(abc.ABC):
                         print(f"\n\t🚚 Order {key} is delivered by {value[0]}")
                         STORAGE["delivery"][key][1] = "archived"
                         STORAGE["delivery"][key][2] = datetime.now()
-                        print(f"\n\tOrder {key} added to archive {STORAGE['delivery'][key][2]}")
+                        print(
+                            f"\n\tOrder {key} added to archive {STORAGE['delivery'][key][2]}"
+                        )
                         orders_to_remove.add(key)
 
             time.sleep(0.5)  # delay, cause we don't want CPU 100%
@@ -92,7 +93,9 @@ class DeliveryService(abc.ABC):
 
             for order_id in to_remove:
                 del STORAGE["delivery"][order_id]
-                print(f"\n\t🗑️ Order {order_id} has been removed from STORAGE (archived over a minute ago)")
+                print(
+                    f"\n\t🗑️ Order {order_id} has been removed from STORAGE (archived over a minute ago)"
+                )
 
             time.sleep(1)
 
