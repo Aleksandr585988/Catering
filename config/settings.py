@@ -38,10 +38,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     # custom
-    "users.apps.UsersConfig",
-    "restaurants.apps.RestaurantsConfig",
-    "orders.apps.OrdersConfig",
-    "delivery.apps.DeliveryConfig",
+    "food",
+    "delivery",
 ]
 
 MIDDLEWARE = [

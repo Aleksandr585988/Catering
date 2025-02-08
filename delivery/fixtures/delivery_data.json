@@ -1,0 +1,35 @@
+[
+    {
+        "model": "delivery.deliverydishesorder",
+        "pk": 1,
+        "fields": {
+            "provider": "provider_1",
+            "status": "pending",
+            "addresses": "123 Main St, Springfield",
+            "external_order_id": "EXT12345",
+            "order": 1
+        }
+    },
+    {
+        "model": "delivery.deliverydishesorder",
+        "pk": 2,
+        "fields": {
+            "provider": "provider_2",
+            "status": "in_transit",
+            "addresses": "456 Elm St, Springfield",
+            "external_order_id": "EXT12346",
+            "order": 2
+        }
+    },
+    {
+        "model": "delivery.deliverydishesorder",
+        "pk": 3,
+        "fields": {
+            "provider": "provider_3",
+            "status": "delivered",
+            "addresses": "789 Oak St, Springfield",
+            "external_order_id": "EXT12347",
+            "order": 3
+        }
+    }
+]

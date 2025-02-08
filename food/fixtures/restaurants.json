@@ -1,0 +1,18 @@
+[
+  {
+    "model": "food.restaurant",
+    "pk": 1,
+    "fields": {
+      "name": "Pizza Place",
+      "address": "123 Pizza Street"
+    }
+  },
+  {
+    "model": "food.restaurant",
+    "pk": 2,
+    "fields": {
+      "name": "Burger Joint",
+      "address": "456 Burger Avenue"
+    }
+  }
+]
