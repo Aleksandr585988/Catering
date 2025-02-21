@@ -4,10 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "*"
 djangorestframework = "==3.15.2"
+django = "==5.1.5"
+djangorestframework-simplejwt = "~=5.4.0"
 
 [dev-packages]
+django-stubs = "~=5.1"
 black = "*"
 flake8 = "*"
 isort = "*"

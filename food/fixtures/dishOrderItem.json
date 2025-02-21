@@ -1,0 +1,146 @@
+[
+  {
+    "model": "food.dishorderitem",
+    "pk": 1,
+    "fields": {
+      "quantity": 2,
+      "order": 1,
+      "dish": 1
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 2,
+    "fields": {
+      "quantity": 1,
+      "order": 1,
+      "dish": 2
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 3,
+    "fields": {
+      "quantity": 3,
+      "order": 2,
+      "dish": 3
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 4,
+    "fields": {
+      "quantity": 2,
+      "order": 2,
+      "dish": 4
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 5,
+    "fields": {
+      "quantity": 1,
+      "order": 3,
+      "dish": 5
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 6,
+    "fields": {
+      "quantity": 2,
+      "order": 3,
+      "dish": 6
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 7,
+    "fields": {
+      "quantity": 2,
+      "order": 4,
+      "dish": 7
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 8,
+    "fields": {
+      "quantity": 4,
+      "order": 4,
+      "dish": 8
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 9,
+    "fields": {
+      "quantity": 1,
+      "order": 5,
+      "dish": 9
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 10,
+    "fields": {
+      "quantity": 3,
+      "order": 5,
+      "dish": 10
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 11,
+    "fields": {
+      "quantity": 2,
+      "order": 6,
+      "dish": 1
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 12,
+    "fields": {
+      "quantity": 1,
+      "order": 6,
+      "dish": 3
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 13,
+    "fields": {
+      "quantity": 2,
+      "order": 7,
+      "dish": 5
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 14,
+    "fields": {
+      "quantity": 4,
+      "order": 7,
+      "dish": 7
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 15,
+    "fields": {
+      "quantity": 3,
+      "order": 8,
+      "dish": 2
+    }
+  },
+  {
+    "model": "food.dishorderitem",
+    "pk": 16,
+    "fields": {
+      "quantity": 2,
+      "order": 8,
+      "dish": 4
+    }
+  }
+]
