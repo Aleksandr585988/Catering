@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 class Restaurant(models.Model):
@@ -37,7 +38,11 @@ class DishesOrder(models.Model):
         verbose_name_plural = "dishes orders"
 
     external_order_id = models.CharField(max_length=255)
-    user = models.ForeignKey("auth.User", on_delete=models.CASCADE)
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
 
     def __str__(self) -> str:
         return f"Order {self.external_order_id} for {self.user.username}"

@@ -1,5 +1,14 @@
 from django.contrib import admin
+from django.http.response import HttpResponseRedirect
 from .models import Dish, Restaurant, DishesOrder, DishOrderItem
+
+
+def import_csv(self, request, queryset):
+    print("testing import CSV custom action")
+    return HttpResponseRedirect("/import-dishes")
+
+
+admin.site.add_action(import_csv)
 
 
 @admin.register(Restaurant)
@@ -14,6 +23,7 @@ class DishAdmin(admin.ModelAdmin):
     list_display = ("name", "price", "restaurant")
     search_fields = ("name",)
     list_filter = ("name", "restaurant")
+    actionss = ("import_csv",)
 
 
 # admin.site.register(DishOrderItem)
