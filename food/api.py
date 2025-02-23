@@ -3,8 +3,8 @@ from rest_framework import status, viewsets, routers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Dish, DishOrderItem, Order
-from .serializers import DishSerializer, OrderSerializer
+from .models import Dish, DishOrderItem, Order, Restaurant
+from .serializers import DishSerializer, OrderSerializer, RestaurantSerializer
 from .enums import OrderStatus
 
 
@@ -65,9 +65,26 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         )
 
 
+# ViewSet для Restaurant
+class RestaurantViewSet(viewsets.ModelViewSet):
+    queryset = Restaurant.objects.all()
+    serializer_class = RestaurantSerializer
+
+    @action(detail=True, methods=["get"])
+    def dishes(self, request, pk=None):
+        restaurant = self.get_object()
+        dishes = Dish.objects.filter(restaurant=restaurant)
+        serializer = DishSerializer(dishes, many=True)
+        return Response(data=serializer.data)
+
+
+# ViewSet для Dish
+class DishViewSet(viewsets.ModelViewSet):
+    queryset = Dish.objects.all()
+    serializer_class = DishSerializer
+
+
 router = routers.DefaultRouter()
-router.register(
-    prefix="food",
-    viewset=FoodAPIViewSet,
-    basename="food",
-)
+router.register(prefix="food", viewset=FoodAPIViewSet, basename="food",)
+router.register(prefix="restaurants", viewset=RestaurantViewSet, basename="restaurant")
+router.register(prefix="dishes", viewset=DishViewSet, basename="dish")
