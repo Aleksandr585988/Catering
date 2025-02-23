@@ -10,7 +10,7 @@ class Restaurant(models.Model):
     address = models.CharField(max_length=100, blank=True)
 
     def __str__(self) -> str:
-        return f"{self.name}, {self.address}"
+        return f"[{self.pk}] {self.name}"
 
 
 class Dish(models.Model):
@@ -26,7 +26,7 @@ class Dish(models.Model):
         return f"{self.name} {self.price}  ({self.restaurant})"
 
 
-class DishesOrder(models.Model):
+class Order(models.Model):
     """the instance of that class defines the order of dishes from
     external restaurant that is available in the system.
 
@@ -34,10 +34,10 @@ class DishesOrder(models.Model):
     """
 
     class Meta:
-        db_table = "dishes_orders"
-        verbose_name_plural = "dishes orders"
+        db_table = "orders"
 
-    external_order_id = models.CharField(max_length=255)
+    status = models.CharField(max_length=20)
+    provider = models.CharField(max_length=20, null=True, blank=True)
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -45,12 +45,19 @@ class DishesOrder(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"Order {self.external_order_id} for {self.user.username}"
+        return f"{self.pk} {self.status} for {self.user.email}"
 
 
 class DishOrderItem(models.Model):
     """the instance of that class defines a DISH item that is related
     to an ORDER, that user has made.
+
+
+    NOTES
+    --------
+
+    do we need user in relations?
+    NOT! because we have it in the ``Order``
     """
 
     class Meta:
@@ -58,8 +65,8 @@ class DishOrderItem(models.Model):
 
     quantity = models.SmallIntegerField()
 
-    order = models.ForeignKey("DishesOrder", on_delete=models.CASCADE)
     dish = models.ForeignKey("Dish", on_delete=models.CASCADE)
+    order = models.ForeignKey("Order", on_delete=models.CASCADE)
 
     def __str__(self) -> str:
-        return f"[{self.order.external_order_id}] {self.dish.name}: {self.quantity}"
+        return f"[{self.order.pk}] {self.dish.name}: {self.quantity}"
