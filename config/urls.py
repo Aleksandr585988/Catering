@@ -2,20 +2,20 @@
 from django.contrib import admin
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView
-from users.api import UserCreateRetrieveAPI
+from users.api import router as users_router
+from food.api import router as food_router
 
 
 def user_create_api(request):
     raise NotImplementedError
 
 
-urlpatterns = [
+urlpatterns = ([
     # USERS MANAGEMENT
     # ==================
     path("admin/", admin.site.urls),
-
     path('auth/token/', TokenObtainPairView.as_view()),
-    path("users/", UserCreateRetrieveAPI.as_view()),
+
     # ============================================
     # path("import-dishes/", import_dishes),
     # path("users/", user_create_retrieve),  # GET to retrieve user, POST to create user
@@ -40,4 +40,4 @@ urlpatterns = [
     # path(
     #     "orders/<id:int>", order_details
     # ),  # GET (owner, support), PUT (only by SUPPORT)
-]
+] + users_router.urls + food_router.urls)
