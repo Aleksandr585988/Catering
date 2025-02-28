@@ -2,12 +2,12 @@ from rest_framework import status, permissions, viewsets, routers
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from .serializers import UserRegistratrionSerializer, UserPublicSerializer
+from .serializers import UserRegistrationSerializer, UserPublicSerializer
 
 
 class UserAPIViewSet(viewsets.GenericViewSet):
     authentication_classes = [JWTAuthentication]
-    serializer_class = UserRegistratrionSerializer
+    serializer_class = UserRegistrationSerializer
     permission_classes = [permissions.AllowAny]
 
     def get_permissions(self):
@@ -21,7 +21,7 @@ class UserAPIViewSet(viewsets.GenericViewSet):
             raise NotImplementedError(f"Action {self.action} is not ready yet")
 
     def create(self, request):
-        serializer = UserRegistratrionSerializer(data=request.data)
+        serializer = UserRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
