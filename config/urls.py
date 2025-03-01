@@ -6,8 +6,8 @@ from users.api import router as users_router
 from food.api import router as food_router
 
 
-def user_create_api(request):
-    raise NotImplementedError
+# def user_create_api(request):
+#     raise NotImplementedError
 
 
 urlpatterns = ([

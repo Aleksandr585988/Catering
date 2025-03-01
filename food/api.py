@@ -1,4 +1,3 @@
-from django.core.handlers.wsgi import WSGIRequest
 from rest_framework import status, viewsets, routers
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -18,7 +17,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
 
     # HTTP GET /food/orders
     @action(methods=["post"], detail=False)
-    def orders(self, request: WSGIRequest):
+    def orders(self, request):
         """create new order for food.
 
         HTTP REQUEST EXAMPLE
