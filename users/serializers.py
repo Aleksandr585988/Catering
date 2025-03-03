@@ -37,8 +37,8 @@ class UserActivationSerializer(serializers.Serializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    def validate(self, attrs):
-        data = super().validate(attrs)
+    def validate(self, payload):
+        data = super().validate(payload)
         if not self.user.is_active:
             raise AuthenticationFailed("User account is not activated.", code="user_not_active")
         return data
