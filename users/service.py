@@ -1,4 +1,5 @@
 import uuid
+import logging
 from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 
@@ -6,12 +7,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 CACHE: dict[uuid.UUID, dict] = {}
 
-# def create_activation_key(email: str):
-#     raise NotImplementedError
-#
-#
-# def set_user_activation_email(email: str, activation_key: str):
-#     raise NotImplementedError
+logger = logging.getLogger(__name__)
 
 
 class Activator:
@@ -60,8 +56,14 @@ class Activator:
     def activate_user(self, activation_key: uuid.UUID | None) -> None:
         if activation_key is None:
             raise ValueError("Can not activate user without activation key")
-        else:
-            user_cache_payload = CACHE[activation_key]
-            user = User.objects.get(id=user_cache_payload["user_id"])
-            user.is_active = True
-            user.save()
+
+        user_data = CACHE.pop(activation_key)
+        user = User.objects.get(id=user_data["user_id"])
+        if user.is_active:
+            logger.info(f"User {user.email} is already activated.")
+            return
+
+        user.is_active = True
+        user.save()
+        del CACHE[activation_key]
+        logger.info(f"User {user.email} has been activated.")

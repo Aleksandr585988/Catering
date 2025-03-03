@@ -3,8 +3,10 @@ from rest_framework import status, permissions, viewsets, routers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import UserRegistrationSerializer, UserPublicSerializer, UserActivationSerializer
+from .serializers import (UserRegistrationSerializer, UserPublicSerializer,
+                          UserActivationSerializer, CustomTokenObtainPairSerializer)
 from users.service import Activator
 
 
@@ -65,6 +67,10 @@ class UserAPIViewSet(viewsets.GenericViewSet):
 
         # serializer.validated_data
         return Response(data=None, status=status.HTTP_204_NO_CONTENT)
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 
 router = routers.DefaultRouter()
