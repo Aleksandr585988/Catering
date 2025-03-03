@@ -16,6 +16,7 @@ class UserManager(BaseUserManager):
 
         extra_fields["is_staff"] = False
         extra_fields["is_superuser"] = False
+        extra_fields.setdefault("is_active", False)  # Initially the user is inactive
         extra_fields["role"] = Role.CLIENT
 
         user = self.model(email=email, password=password, **extra_fields)
@@ -31,6 +32,7 @@ class UserManager(BaseUserManager):
 
         extra_fields["is_staff"] = True
         extra_fields["is_superuser"] = True
+        extra_fields.setdefault("is_active", True)  # Admins are active at once
         extra_fields["role"] = Role.ADMIN
 
         user = self.model(email=email, password=password, **extra_fields)
