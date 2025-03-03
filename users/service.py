@@ -57,7 +57,10 @@ class Activator:
         if activation_key is None:
             raise ValueError("Can not activate user without activation key")
 
-        user_data = CACHE.pop(activation_key)
+        user_data = CACHE.pop(activation_key, None)
+        if not user_data:
+            raise ValueError("Invalid activation key")
+
         user = User.objects.get(id=user_data["user_id"])
         if user.is_active:
             logger.info(f"User {user.email} is already activated.")
@@ -65,5 +68,5 @@ class Activator:
 
         user.is_active = True
         user.save()
-        del CACHE[activation_key]
         logger.info(f"User {user.email} has been activated.")
+
