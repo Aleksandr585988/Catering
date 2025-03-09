@@ -3,6 +3,8 @@ from threading import Thread
 from time import sleep
 
 from django.db.models import QuerySet
+from django.core.cache import cache 
+import json
 
 from food.enums import OrderStatus
 from food.models import Order
@@ -70,6 +72,22 @@ class Processor:
             # today scenario
             order.status = OrderStatus.COOKING
             order.save()
+
+            # Creates a data structure for caching
+            order_cache = {
+                "id": order.pk,
+                "status": order.status,
+                "eta": order.eta,
+                "food": [
+                    {"dish_id": item.dish.pk, "quantity": item.quantity}
+                    for item in order.items.all()
+                ],
+            }
+
+            # We update the cache with the new status of the order
+            cache.set(f"order:{order.pk}", json.dumps(order_cache), timeout=3600)
+            print(f"Order {order.pk} updated in Redis cache")
+
 
             restaurants = set()
             for item in order.items.all():
