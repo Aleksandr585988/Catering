@@ -93,7 +93,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         }
 
         # Stores the order in Redis cache with a TTL (1 hour)
-        self.cache_service.set(f"order:{order.pk}", json.dumps(order_cache), timeout=3600)
+        self.cache_service.set(f"order:{order.pk}", json.dumps(order_cache), ttl=3600)
         print(f"Order {order.pk} cached in Redis")
 
         # Returns the response

@@ -3,7 +3,7 @@ from threading import Thread
 from time import sleep
 
 from django.db.models import QuerySet
-from django.core.cache import cache 
+from shared.cache import CacheService
 import json
 
 from food.enums import OrderStatus
@@ -12,6 +12,8 @@ from food.models import Order
 
 
 class Processor:
+
+    cache_service = CacheService()
 
     EXCLUDE_STATUSES = (
         OrderStatus.DELIVERED,
@@ -85,8 +87,9 @@ class Processor:
             }
 
             # We update the cache with the new status of the order
-            cache.set(f"order:{order.pk}", json.dumps(order_cache), timeout=3600)
-            print(f"Order {order.pk} updated in Redis cache")
+            if order.status == OrderStatus.COOKING:
+                self.cache_service.set(f"order:{order.pk}", json.dumps(order_cache), ttl=3600)
+                print(f"Order {order.pk} updated in Redis cache")
 
 
             restaurants = set()

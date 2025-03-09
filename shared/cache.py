@@ -20,4 +20,8 @@ class CacheService:
 
     def get(self, namespace: str, key: str) -> dict:
         result: str = self.connection.get(self._build_key(namespace, key))  # type: ignore
+        
+        if result is None:
+            return None
+        
         return json.loads(result)
