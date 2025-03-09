@@ -38,6 +38,7 @@ class Order(models.Model):
 
     status = models.CharField(max_length=20)
     provider = models.CharField(max_length=20, null=True, blank=True)
+    eta = models.DateField()
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

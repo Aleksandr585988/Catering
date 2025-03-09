@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     "food",
     "delivery",
     "users",
+    "shared",
+    "orders",
 ]
 
 MIDDLEWARE = [
@@ -104,6 +106,12 @@ DATABASES = {
         "ATOMIC_REQUESTS": True
     }
 }
+
+# Cache
+CACHE_CONNECTION_STRING = "redis://localhost:6379/0"
+
+
+
 
 
 # Password validation

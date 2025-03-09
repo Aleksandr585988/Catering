@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .models import Dish, DishOrderItem, Order, Restaurant
-from .serializers import DishSerializer, OrderSerializer, RestaurantSerializer
+from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer
 from .enums import OrderStatus
 
 
@@ -25,7 +25,8 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
             "food": {
                 1: 3  // id: quantity
                 2: 1  // id: quantity
-            }
+            },
+            "eta": TIMESTAMP
         }
 
 
@@ -33,7 +34,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         1. validate the input
         2. create ``
         """
-        serializer = OrderSerializer(data=request.data)
+        serializer = OrderCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         if not isinstance(serializer.validated_data, dict):
@@ -42,8 +43,12 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         # order = Order(status=OrderStatus.NOT_STARTED, provider=None)
         # order.save()
 
-        order = Order.objects.create(status=OrderStatus.NOT_STARTED, user=request.user)
-        print(f"New Food Order is created: {order.pk}")
+        order = Order.objects.create(
+            status=OrderStatus.NOT_STARTED, 
+            user=request.user,
+            eta=serializer.validated_data["eta"]
+            )
+        print(f"New Food Order is created: {order.pk}.\nETA;{order.eta} ")
 
         try:
             dishes_order = serializer.validated_data["food"]
@@ -59,7 +64,12 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
             print(f"New Dish Order Item is created: {instance.pk}")
 
         return Response(
-            data={},
+            data={
+                "id": order.pk,
+                "status": order.status,
+                "eta": order.eta,
+                "total": 9999,
+            },
             status=status.HTTP_201_CREATED,
         )
 
