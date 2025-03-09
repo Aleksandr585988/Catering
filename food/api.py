@@ -5,11 +5,13 @@ from rest_framework.response import Response
 from .models import Dish, DishOrderItem, Order, Restaurant
 from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer
 from .enums import OrderStatus
-from django.core.cache import cache
+from shared.cache import CacheService
 import json
 
 
 class FoodAPIViewSet(viewsets.GenericViewSet):
+    cache_service = CacheService()
+
     # HTTP GET /food/dishes
     @action(methods=["get"], detail=False)
     def dishes(self, request):
@@ -45,7 +47,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
             raise ValueError(...)
         
         # Checks if the order is already cached
-        cached_order = cache.get(f"order:{serializer.validated_data['id']}")
+        cached_order = self.cache_service.get(f"order:{serializer.validated_data['id']}")
         if cached_order:
             print(f"Order {serializer.validated_data['id']} fetched from Redis cache")
             return Response(
@@ -91,7 +93,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         }
 
         # Stores the order in Redis cache with a TTL (1 hour)
-        cache.set(f"order:{order.pk}", json.dumps(order_cache), timeout=3600)
+        self.cache_service.set(f"order:{order.pk}", json.dumps(order_cache), timeout=3600)
         print(f"Order {order.pk} cached in Redis")
 
         # Returns the response
