@@ -8,7 +8,7 @@ User = get_user_model()
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    exclude = ["user_permissions", "gropus"]
+    exclude = ["user_permissions", "groups"]
     readonly_fields = [
         "password",
         "last_login",

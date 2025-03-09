@@ -8,6 +8,7 @@ djangorestframework-simplejwt = "~=5.4.0"
 django = "*"
 djangorestframework = "*"
 psycopg2-binary = "~=2.9.10"
+redis = "~=5.2.1"
 
 [dev-packages]
 django-stubs = "~=5.1"

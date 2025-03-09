@@ -1,17 +1,14 @@
 import uuid
+import logging
 from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 
+from shared.cache import CacheService
 
 User = get_user_model()
-CACHE: dict[uuid.UUID, dict] = {}
+# CACHE: dict[uuid.UUID, dict] = {}
 
-# def create_activation_key(email: str):
-#     raise NotImplementedError
-#
-#
-# def set_user_activation_email(email: str, activation_key: str):
-#     raise NotImplementedError
+logger = logging.getLogger(__name__)
 
 
 class Activator:
@@ -19,6 +16,7 @@ class Activator:
 
     def __init__(self, email: str | None = None) -> None:
         self.email: str | None = email
+        self.cache = CacheService()
 
     def create_activation_key(self) -> uuid.UUID:
         # assert self.email
@@ -55,13 +53,27 @@ class Activator:
         """
 
         payload = {"user_id": user_id}
-        CACHE[activation_key] = payload
+
+        # CACHE[activation_key] = payload
+        self.cache.set(
+            namespace="activation", key=str(activation_key), instance=payload
+        )
 
     def activate_user(self, activation_key: uuid.UUID | None) -> None:
         if activation_key is None:
             raise ValueError("Can not activate user without activation key")
-        else:
-            user_cache_payload = CACHE[activation_key]
-            user = User.objects.get(id=user_cache_payload["user_id"])
-            user.is_active = True
-            user.save()
+
+        # user_data = CACHE.pop(activation_key, None)
+        user_data = self.cache.get(namespace="activation", key=str(activation_key))
+        if not user_data:
+            raise ValueError("Invalid activation key")
+
+        user = User.objects.get(id=user_data["user_id"])
+        if user.is_active:
+            logger.info(f"User {user.email} is already activated.")
+            return
+
+        user.is_active = True
+        user.save()
+        logger.info(f"User {user.email} has been activated.")
+
