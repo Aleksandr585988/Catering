@@ -49,6 +49,7 @@ class Processor:
             match order.status:
                 case OrderStatus.NOT_STARTED:
                     self._process_not_started(order)
+                    self._update_order_cache(order, self._generate_order_cache(order))
                 case OrderStatus.COOKING_REJECTED:
                     self._process_cooking_rejected()
                 case _:
@@ -68,29 +69,9 @@ class Processor:
         ETA3:   04.03.2025  -> COOKING + send API call to restaurants
         """
 
-        if order.eta > self.today:
-            pass
-        else:  # only if `==`
-            # today scenario
+        if order.eta == self.today:
             order.status = OrderStatus.COOKING
             order.save()
-
-            # Creates a data structure for caching
-            order_cache = {
-                "id": order.pk,
-                "status": order.status,
-                "eta": order.eta,
-                "food": [
-                    {"dish_id": item.dish.pk, "quantity": item.quantity}
-                    for item in order.items.all()
-                ],
-            }
-
-            # We update the cache with the new status of the order
-            if order.status == OrderStatus.COOKING:
-                self.cache_service.set(f"order:{order.pk}", json.dumps(order_cache), ttl=3600)
-                print(f"Order {order.pk} updated in Redis cache")
-
 
             restaurants = set()
             for item in order.items.all():
@@ -101,3 +82,20 @@ class Processor:
 
     def _process_cooking_rejected(self):
         raise NotImplementedError
+    
+    def _generate_order_cache(self, order: Order) -> dict:
+        return {
+            "id": order.pk,
+            "status": order.status,
+            "eta": order.eta,
+            "food": [
+                {"dish_id": item.dish.pk, "quantity": item.quantity}
+                for item in order.items.all()
+            ],
+        }
+    
+    def _update_order_cache(self, order: Order, order_cache: dict):
+        # We update the cache with the new status of the order
+        if order.status == OrderStatus.COOKING:
+            self.cache_service.set(f"order:{order.pk}", json.dumps(order_cache), ttl=3600)
+            print(f"Order {order.pk} updated in Redis cache")
