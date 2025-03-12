@@ -3,9 +3,10 @@ import logging
 from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 
+from shared.cache import CacheService
 
 User = get_user_model()
-CACHE: dict[uuid.UUID, dict] = {}
+# CACHE: dict[uuid.UUID, dict] = {}
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ class Activator:
 
     def __init__(self, email: str | None = None) -> None:
         self.email: str | None = email
+        self.cache = CacheService()
 
     def create_activation_key(self) -> uuid.UUID:
         # assert self.email
@@ -51,13 +53,18 @@ class Activator:
         """
 
         payload = {"user_id": user_id}
-        CACHE[activation_key] = payload
+
+        # CACHE[activation_key] = payload
+        self.cache.set(
+            namespace="activation", key=str(activation_key), instance=payload
+        )
 
     def activate_user(self, activation_key: uuid.UUID | None) -> None:
         if activation_key is None:
             raise ValueError("Can not activate user without activation key")
 
-        user_data = CACHE.pop(activation_key, None)
+        # user_data = CACHE.pop(activation_key, None)
+        user_data = self.cache.get(namespace="activation", key=str(activation_key))
         if not user_data:
             raise ValueError("Invalid activation key")
 
