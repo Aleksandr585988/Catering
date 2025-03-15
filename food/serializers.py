@@ -24,6 +24,7 @@ class DishOrderSerializer(serializers.Serializer):
 
 
 class OrderCreateSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
     food = DishOrderSerializer(many=True)
     eta = serializers.DateField()
     total = serializers.IntegerField(min_value=1, read_only=True)

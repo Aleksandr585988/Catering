@@ -182,3 +182,19 @@ EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 EMAIL_HOST_USER = "mailpit"
 EMAIL_HOST_PASSWORD = "mailpit"
+
+# # CELERY SECTION
+# # settings ref: https://docs.celeryq.dev/en/stable/userguide/configuration.html
+# CELERY_BROKER_URL = "redis://localhost:6380/0"
+
+# # Use JSON instead of pickle for serialization
+# CELERY_ACCEPT_CONTENT = ["json"]  # Only accept JSON to avoid the pickle issue
+# CELERY_TASK_SERIALIZER = "json"  # Task serialization to JSON
+# CELERY_EVENT_SERIALIZER = "json"  # Event serialization to JSON
+
+# CELERY SECTION
+# settings ref: https://docs.celeryq.dev/en/stable/userguide/configuration.html
+CELERY_BROKER_URL = "redis://localhost:6380/0"
+CELERY_ACCEPT_CONTENT = ["pickle", "application/json", "application/x-python-serialize"]
+CELERY_TASK_SERIALIZER = "pickle"
+CELERY_EVENT_SERIALIZER = "pickle"

@@ -10,6 +10,13 @@ from .serializers import (UserRegistrationSerializer, UserPublicSerializer,
 from users.service import Activator
 
 
+# POC
+# @celery_app.task
+# def background_task(n: int):
+#     print(f"Running in the background, {n=}")
+#     return n
+
+
 class UserAPIViewSet(viewsets.GenericViewSet):
     authentication_classes = [JWTAuthentication]
     serializer_class = UserRegistrationSerializer

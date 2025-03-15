@@ -1,3 +1,4 @@
+
 from datetime import date
 from threading import Thread
 from time import sleep
@@ -8,6 +9,7 @@ import json
 
 from food.enums import OrderStatus
 from food.models import Order
+from .constants import EXCLUDE_STATUSES
 
 
 
@@ -15,10 +17,7 @@ class Processor:
 
     cache_service = CacheService()
 
-    EXCLUDE_STATUSES = (
-        OrderStatus.DELIVERED,
-        OrderStatus.NOT_DELIVERED,
-    )
+
 
     def __init__(self) -> None:
         self._thread = Thread(target=self.process, daemon=True)
@@ -37,12 +36,12 @@ class Processor:
 
         while True:
             self._process()
-            sleep(2)  # delay
+            sleep(2)  # delay 
 
     def _process(self):
-
+        
         orders: QuerySet[Order] = Order.objects.exclude(
-            status__in=self.EXCLUDE_STATUSES,
+            status__in=EXCLUDE_STATUSES
         )
 
         for order in orders:

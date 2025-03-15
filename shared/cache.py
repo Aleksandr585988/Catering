@@ -1,3 +1,10 @@
+"""
+CACHE PROPERTIES:
+    set(key: str, value: dict)
+    get(key: str)
+    delete(key: str)
+"""
+
 import json
 
 import redis
@@ -19,8 +26,7 @@ class CacheService:
         self.connection.set(name=self._build_key(namespace, key), value=payload, ex=ttl)
 
     def get(self, namespace: str, key: str) -> dict:
-        result: str = self.connection.get(self._build_key(namespace, key))  # type: ignore
-        
+        result: str = self.connection.get(self._build_key(namespace, key))
         if result is None:
             return None
         

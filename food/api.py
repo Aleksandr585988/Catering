@@ -6,6 +6,7 @@ from .models import Dish, DishOrderItem, Order, Restaurant
 from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer
 from .enums import OrderStatus
 from shared.cache import CacheService
+from .services import OrdersService
 import json
 
 
@@ -16,7 +17,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
     @action(methods=["get"], detail=False)
     def dishes(self, request):
         dishes = Dish.objects.all()
-        serializer = DishSerializer(dishes, many=True)
+        serializer = DishSerializer(dishes, many=True)       
         return Response(data=serializer.data)
 
     # HTTP GET /food/orders
@@ -46,55 +47,55 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         if not isinstance(serializer.validated_data, dict):
             raise ValueError(...)
         
-        # Checks if the order is already cached
-        cached_order = self.cache_service.get(f"order:{serializer.validated_data['id']}")
-        if cached_order:
-            print(f"Order {serializer.validated_data['id']} fetched from Redis cache")
-            return Response(
-                data=json.loads(cached_order),
-                status=status.HTTP_200_OK,
-            )
-
-        # order = Order(status=OrderStatus.NOT_STARTED, provider=None)
-        # order.save()
-
+        
         # Creates the order in the database
-        order = Order.objects.create(
-            status=OrderStatus.NOT_STARTED, 
+        order: Order = Order.objects.create(
+            status=OrderStatus.NOT_STARTED,
             user=request.user,
-            eta=serializer.validated_data["eta"]
-            )
+            eta=serializer.validated_data["eta"],
+        )
+
+        OrdersService().shedule_order(order=order)
         print(f"New Food Order is created: {order.pk}.\nETA;{order.eta} ")
 
         # Proces the food items (dishes) ordered
         try:
             dishes_order = serializer.validated_data["food"]
+            
         except KeyError as error:
             raise ValueError("Food order is not properly built")
 
         # Creates DishOrderItems and associate them with the order
         for dish_order in dishes_order:
             instance = DishOrderItem.objects.create(
-                dish=dish_order["dish"],
-                quantity=dish_order["quantity"],
+                dish=dish_order["dish"], 
+                quantity=dish_order["quantity"], 
                 order=order
             )
             print(f"New Dish Order Item is created: {instance.pk}")
 
-        # Creates a cacheable order structure to store in Redis
+        # Creates a cacheable order structure to store in Redis ------------------------------------------------------
         order_cache = {
             "id": order.pk,
             "status": order.status,
-            "eta": order.eta,
+            "eta": order.eta.strftime("%Y-%m-%d"),
             "food": [
-                {"dish_id": dish_order["dish"], "quantity": dish_order["quantity"]}
+                {"dish_id": dish_order["dish"].id, "quantity": dish_order["quantity"]}
                 for dish_order in dishes_order
             ],
         }
 
-        # Stores the order in Redis cache with a TTL (1 hour)
-        self.cache_service.set(f"order:{order.pk}", json.dumps(order_cache), ttl=3600)
-        print(f"Order {order.pk} cached in Redis")
+        # Checks if the order is already cached
+        cached_order = self.cache_service.get(namespace="order", key=str(order.pk))
+        if cached_order:
+            return Response(
+                data=json.loads(cached_order),
+                status=status.HTTP_200_OK,              
+            )
+
+        # Stores the order in Redis cache with a TTL (1 hour)-------------------------------------------------------
+        self.cache_service.set(namespace="order", key=str(order.pk), instance=order_cache, ttl=3600)
+        cached_order = self.cache_service.get(namespace="order", key=str(order.pk))
 
         # Returns the response
         return Response(
@@ -102,6 +103,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
                 "id": order.pk,
                 "status": order.status,
                 "eta": order.eta,
+                "food": order_cache["food"],
                 "total": 9999,
             },
             status=status.HTTP_201_CREATED,
