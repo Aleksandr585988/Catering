@@ -38,6 +38,7 @@ class Order(models.Model):
 
     status = models.CharField(max_length=20)
     provider = models.CharField(max_length=20, null=True, blank=True)
+    eta = models.DateField()
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -46,6 +47,9 @@ class Order(models.Model):
 
     def __str__(self) -> str:
         return f"{self.pk} {self.status} for {self.user.email}"
+    
+    def __repr__(self) -> str:
+        return super().__str__()
 
 
 class DishOrderItem(models.Model):
