@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     "delivery",
     "users",
     "shared",
-    "orders",
+    
 ]
 
 MIDDLEWARE = [

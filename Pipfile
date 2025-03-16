@@ -10,6 +10,7 @@ djangorestframework = "*"
 psycopg2-binary = "~=2.9.10"
 redis = "~=5.2.1"
 celery = { version = "==5.4.0", extras = ["redis"]}
+uvicorn = "*"
 
 [dev-packages]
 django-stubs = "~=5.1"
@@ -21,6 +22,11 @@ pytest = "*"
 pytest-django = "*"
 ipdb = "*"
 celery-types = "*"
+fastapi = "*"
+pydantic = "*"
+httpx = "*"
+uvicorn = "*"
+requests = "*"
 
 [requires]
 python_version = "3.11"
