@@ -1,3 +1,4 @@
+from celery.result import AsyncResult
 from rest_framework import status, viewsets, routers
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -6,8 +7,9 @@ from .models import Dish, DishOrderItem, Order, Restaurant
 from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer
 from .enums import OrderStatus
 from shared.cache import CacheService
-from .services import OrdersService
+from .services import schedule_order
 import json
+
 
 
 class FoodAPIViewSet(viewsets.GenericViewSet):
@@ -31,7 +33,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
                 1: 3  // id: quantity
                 2: 1  // id: quantity
             },
-            "eta": TIMESTAMP
+            "eta": DATE
         }
 
 
@@ -54,10 +56,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
             user=request.user,
             eta=serializer.validated_data["eta"],
         )
-
-        OrdersService().shedule_order(order=order)
-        print(f"New Food Order is created: {order.pk}.\nETA;{order.eta} ")
-
+        
         # Proces the food items (dishes) ordered
         try:
             dishes_order = serializer.validated_data["food"]
@@ -74,7 +73,12 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
             )
             print(f"New Dish Order Item is created: {instance.pk}")
 
-        # Creates a cacheable order structure to store in Redis ------------------------------------------------------
+        schedule_order(order=order)
+
+        # OrdersService().schedule_order(order=order)
+        print(f"New Food Order is created: {order.pk}.\nETA;{order.eta} ")
+
+        # Creates a cacheable order structure to store in Redis 
         order_cache = {
             "id": order.pk,
             "status": order.status,
@@ -93,7 +97,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
                 status=status.HTTP_200_OK,              
             )
 
-        # Stores the order in Redis cache with a TTL (1 hour)-------------------------------------------------------
+        # Stores the order in Redis cache with a TTL (1 hour)
         self.cache_service.set(namespace="order", key=str(order.pk), instance=order_cache, ttl=3600)
         cached_order = self.cache_service.get(namespace="order", key=str(order.pk))
 
@@ -110,7 +114,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         )
 
 
-# ViewSet для Restaurant
+# ViewSet For Restaurant
 class RestaurantViewSet(viewsets.ModelViewSet):
     queryset = Restaurant.objects.all()
     serializer_class = RestaurantSerializer
@@ -123,7 +127,7 @@ class RestaurantViewSet(viewsets.ModelViewSet):
         return Response(data=serializer.data)
 
 
-# ViewSet для Dish
+# ViewSet For Dish
 class DishViewSet(viewsets.ModelViewSet):
     queryset = Dish.objects.all()
     serializer_class = DishSerializer
