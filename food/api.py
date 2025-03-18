@@ -1,4 +1,4 @@
-from celery.result import AsyncResult
+
 from rest_framework import status, viewsets, routers
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -47,9 +47,8 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
 
         if not isinstance(serializer.validated_data, dict):
-            raise ValueError(...)
-        
-        
+            raise ValueError("Invalid data format.")
+
         # Creates the order in the database
         order: Order = Order.objects.create(
             status=OrderStatus.NOT_STARTED,
@@ -75,7 +74,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
 
         schedule_order(order=order)
 
-        # OrdersService().schedule_order(order=order)
+
         print(f"New Food Order is created: {order.pk}.\nETA;{order.eta} ")
 
         # Creates a cacheable order structure to store in Redis 
