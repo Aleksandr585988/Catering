@@ -52,6 +52,22 @@ class Order(models.Model):
         return super().__str__()
 
 
+class RestaurantOrder(models.Model):
+    class Meta:
+        db_table = "restaurant_order"
+        
+    external_id = models.CharField(max_length=100, unique=True, blank=True, null=True)
+    restaurant = models.CharField(max_length=20)
+    status = models.CharField(max_length=20)  
+    order = models.ForeignKey("Order", on_delete=models.CASCADE, related_name="restaurant_orders")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"[{self.restaurant}] Order {self.external_id or 'pending'} - {self.status}"
+
+
 class DishOrderItem(models.Model):
     """the instance of that class defines a DISH item that is related
     to an ORDER, that user has made.

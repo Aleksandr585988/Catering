@@ -24,7 +24,7 @@ class OrderRequestBody(BaseModel):
 # business model of the application
 async def update_order_status(order_id: str):
     for status in ORDER_STATUSES[1:]:
-        await asyncio.sleep(random.randint(5, 10))
+        await asyncio.sleep(random.randint(10, 20))
         STORAGE[order_id]["status"] = status
         print(f"MELANGE [{order_id}] --> {status}")
 
