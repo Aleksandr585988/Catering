@@ -142,11 +142,8 @@ def melange_order_processing(order: OrderInDB):
 
                 if current_status != response.status:
                     melange_order.status = response.status
-                    Order.objects.filter(id=order.internal_order_id).update(
-                        status=RESTAURANT_TO_INTERNAL_STATUSES[Restaurant.MELANGE][
-                            melange_order.status
-                        ]
-                    )
+                    Order.update_from_provider_status(id_=order.internal_order_id, status=response.status)
+
                 print(f"Current status is {melange_order.status}. Waiting 1 second")
                 sleep(1)
 
@@ -156,11 +153,8 @@ def melange_order_processing(order: OrderInDB):
 
             if current_status != response.status:
                 melange_order.status = response.status
-                Order.objects.filter(id=order.internal_order_id).update(
-                    status=RESTAURANT_TO_INTERNAL_STATUSES[Restaurant.MELANGE][
-                        melange_order.status
-                    ]
-                )
+                Order.update_from_provider_status(id_=order.internal_order_id, status=response.status)
+
             print(f"Current status is {current_status}. Waiting 3 seconds")
             sleep(3)
 
@@ -178,8 +172,15 @@ def melange_order_processing(order: OrderInDB):
 
 @celery_app.task
 def bueno_order_processing(order: OrderInDB):
-    print("BUENO")
+    print("BUENO ORDER PROCESSED")
     print("*" * 30)
+
+    order.orders[Restaurant.BUENO].status = bueno.OrderStatus.COOKED
+    validate_all_orders_cooked(order)
+
+    print("BUENO ORDER PROCESSED")
+    print("*" * 30)
+
 
 
 # TODO uncomment
@@ -193,8 +194,8 @@ def _schedule_order(order: Order):
         else:
             raise ValueError(f"Cannot create order for {item.dish.restaurant.name} restaurant")
 
-    melange_order_processing(order_in_db)
-    bueno_order_processing(order_in_db)
+    melange_order_processing.delay(order_in_db)
+    bueno_order_processing.delay(order_in_db)
 
 
 def schedule_order(order: Order)  -> AsyncResult:
