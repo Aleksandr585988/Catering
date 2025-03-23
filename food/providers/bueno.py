@@ -7,7 +7,7 @@ from ._abc import RestaurantProvider
 
 
 class OrderStatus(enum.StrEnum):
-    NOT_STARTED = "not started"
+    NOT_STARTED = "not_started"
     COOKING = "cooking"
     COOKED = "cooked"
     FINISHED = "finished"
@@ -18,9 +18,11 @@ class OrderItem:
     dish: str
     quantity: int
 
+
 @dataclass
 class OrderRequestBody:
     order: list[OrderItem]
+
 
 @dataclass
 class OrderResponse:
@@ -29,7 +31,7 @@ class OrderResponse:
 
 
 class Provider:
-    BASE_URL = "http://localhost:8002"
+    BASE_URL = "http://localhost:8002/api/orders"
 
     @classmethod
     def create_order(cls, order: OrderRequestBody):

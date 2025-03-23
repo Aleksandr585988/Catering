@@ -2,6 +2,8 @@
 from rest_framework import status, viewsets, routers
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import Dish, DishOrderItem, Order, Restaurant
 from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer
@@ -10,6 +12,11 @@ from shared.cache import CacheService
 from .services import schedule_order
 import json
 
+@csrf_exempt
+def bueno_webhook(request):
+    data: dict =json.loads(json.dumps(request.POST))
+    breakpoint()
+    return JsonResponse({"message": "ok"})
 
 
 class FoodAPIViewSet(viewsets.GenericViewSet):

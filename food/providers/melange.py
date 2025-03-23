@@ -3,7 +3,7 @@ from dataclasses import asdict, dataclass
 import httpx
 
 class OrderStatus(enum.StrEnum):
-    NOT_STARTED = "not started"
+    NOT_STARTED = "not_started"
     COOKING = "cooking"
     COOKED = "cooked"
     FINISHED = "finished"

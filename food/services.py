@@ -168,18 +168,39 @@ def melange_order_processing(order: OrderInDB):
     melange_order.save()
 
 
-
-
 @celery_app.task
-def bueno_order_processing(order: OrderInDB):
-    print("BUENO ORDER PROCESSED")
-    print("*" * 30)
+def bueno_order_processing(internal_order_id: int):
+    provider = bueno.Provider()
 
-    order.orders[Restaurant.BUENO].status = bueno.OrderStatus.COOKED
-    validate_all_orders_cooked(order)
+    if not isinstance(internal_order_id, int):
+        raise TypeError(f"Expected internal_order_id to be int, got {type(internal_order_id)}")
+
+    order = Order.objects.get(id=internal_order_id)
+
+    # Create the OrderInDB instance with both the order and internal_order_id
+    order_in_db = OrderInDB(order, internal_order_id=internal_order_id)  # Correct instantiation
+
+    bueno_order = order_in_db.orders.get(Restaurant.BUENO.value)
+    if not bueno_order:
+        raise ValueError("No order found for Bueno")
+
+    response: bueno.OrderResponse = provider.create_order(
+        bueno.OrderRequestBody(
+            order=[
+                bueno.OrderItem(dish=item.dish.name, quantity=item.quantity)
+                for item in order.items.all()
+                if item.dish.restaurant.name.lower() == Restaurant.BUENO.value.lower()
+            ]
+        )
+    )
+
+    # Update order with external ID
+    bueno_order.external_id = response.id
+    bueno_order.save()
 
     print("BUENO ORDER PROCESSED")
-    print("*" * 30)
+    return
+
 
 
 
@@ -194,8 +215,12 @@ def _schedule_order(order: Order):
         else:
             raise ValueError(f"Cannot create order for {item.dish.restaurant.name} restaurant")
 
-    melange_order_processing.delay(order_in_db)
-    bueno_order_processing.delay(order_in_db)
+    if Restaurant.MELANGE.value in order_in_db.orders:
+        melange_order_processing.delay(order_in_db)  # ✅ Pass only order ID
+
+    if Restaurant.BUENO.value in order_in_db.orders:
+        bueno_order_processing.delay(order.pk)  # ✅ Pass only order ID
+
 
 
 def schedule_order(order: Order)  -> AsyncResult:
