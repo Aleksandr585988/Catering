@@ -14,9 +14,28 @@ import json
 
 @csrf_exempt
 def bueno_webhook(request):
-    data: dict =json.loads(json.dumps(request.POST))
-    breakpoint()
+    data: dict = json.loads(json.dumps(request.POST))
+    print("getting the bueno order from the cache and update the database instance")
+
     return JsonResponse({"message": "ok"})
+# @csrf_exempt
+# def bueno_webhook(request):
+#     try:
+#         # Get POST data and convert it to a regular dictionary
+#         data = request.POST.dict()
+
+#         # Debugging output (remove in production)
+#         print(f"Received data: {data}")
+
+#         # You can add additional processing of the data here
+
+#         # Returning a successful response
+#         return JsonResponse({"message": "ok"})
+    
+#     except Exception as e:
+#         # Log any error that occurs
+#         print(f"Error processing webhook: {str(e)}")
+#         return JsonResponse({"message": "error", "details": str(e)}, status=500)
 
 
 class FoodAPIViewSet(viewsets.GenericViewSet):

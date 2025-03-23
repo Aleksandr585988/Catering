@@ -54,8 +54,9 @@ MELANGE HTTP GET /api/orders/<ID>
     }
 ```
 """
+import random
 from time import sleep
-import httpx
+
 from datetime import datetime, time, date
 from .models import Order, RestaurantOrder
 from .enums import Restaurant, OrderStatus
@@ -86,6 +87,29 @@ class OrderInDB:
             )
         self.orders[restaurant.value].save()
 
+class Uklon:
+    def deliver(self, order_in_db: OrderInDB):
+        print(f"Delivering order {order_in_db.internal_order_id} using Provider A")
+
+class Uber:
+    def deliver(self, order_in_db: OrderInDB):
+        print(f"Delivering order {order_in_db.internal_order_id} using Provider B")
+
+
+def select_delivery_provider() -> callable:
+    providers = [Uklon(), Uber()]    
+    return random.choice(providers)
+
+@celery_app.task
+def start_delivery(order_in_db: OrderInDB):
+    print("Starting delivery check...")
+    if validate_all_orders_cooked(order_in_db):
+        print("All restaurants are ready for delivery. Starting delivery...")
+        delivery_provider = select_delivery_provider()
+        delivery_provider.deliver(order_in_db)
+        print(f"Delivery started using provider {delivery_provider.__class__.__name__}")
+    else:
+        print("Not all restaurants are ready for delivery yet.")
 
 def validate_all_orders_cooked(order: OrderInDB) -> bool:
     flag = True
@@ -110,9 +134,7 @@ def validate_all_orders_cooked(order: OrderInDB) -> bool:
         return flag
 
 
-# TODO uncomment
-
-
+#  TODO uncomment
 @celery_app.task
 def melange_order_processing(order: OrderInDB):
     melange_order = order.orders.get(Restaurant.MELANGE.value)
@@ -177,8 +199,7 @@ def bueno_order_processing(internal_order_id: int):
 
     order = Order.objects.get(id=internal_order_id)
 
-    # Create the OrderInDB instance with both the order and internal_order_id
-    order_in_db = OrderInDB(order, internal_order_id=internal_order_id)  # Correct instantiation
+    order_in_db = OrderInDB(order, internal_order_id=internal_order_id)
 
     bueno_order = order_in_db.orders.get(Restaurant.BUENO.value)
     if not bueno_order:
@@ -201,13 +222,10 @@ def bueno_order_processing(internal_order_id: int):
     print("BUENO ORDER PROCESSED")
     return
 
-
-
-
-# TODO uncomment
+#  TODO uncomment
 @celery_app.task
 def _schedule_order(order: Order):
-    order_in_db = OrderInDB(order, internal_order_id=order.pk)
+    order_in_db = OrderInDB(order)
 
     for item in order.items.all():
         if (restaurant := Restaurant[item.dish.restaurant.name.upper()]) in [Restaurant.MELANGE, Restaurant.BUENO]:
@@ -215,16 +233,37 @@ def _schedule_order(order: Order):
         else:
             raise ValueError(f"Cannot create order for {item.dish.restaurant.name} restaurant")
 
-    if Restaurant.MELANGE.value in order_in_db.orders:
-        melange_order_processing.delay(order_in_db)  # ✅ Pass only order ID
+    melange_order_processing(order_in_db)
+    bueno_order_processing(order_in_db)
+    start_delivery(order_in_db)
 
-    if Restaurant.BUENO.value in order_in_db.orders:
-        bueno_order_processing.delay(order.pk)  # ✅ Pass only order ID
+# @celery_app.task
+# def _schedule_order(order: Order):
+#     order_in_db = OrderInDB(order, internal_order_id=order.pk)
+
+#     for item in order.items.all():
+#         if (restaurant := Restaurant[item.dish.restaurant.name.upper()]) in [Restaurant.MELANGE, Restaurant.BUENO]:
+#             order_in_db.append(restaurant, item)
+#         else:
+#             raise ValueError(f"Cannot create order for {item.dish.restaurant.name} restaurant")
+
+#     if Restaurant.MELANGE.value in order_in_db.orders:
+#         melange_order_processing.delay(order_in_db)
+
+#     if Restaurant.BUENO.value in order_in_db.orders:
+#         bueno_order_processing.delay(order_in_db)
+
+#     if validate_all_orders_cooked(order_in_db):
+#         start_delivery(order_in_db)
+#     else:
+#         print("Not all restaurants are ready for delivery yet.")
 
 
 
 def schedule_order(order: Order)  -> AsyncResult:
     assert type(order.eta) is date
+
+    print(f"Scheduling order with eta {order.eta}")
 
     # todo remove
     # _schedule_order(order)
