@@ -27,27 +27,26 @@ class Provider:
 
     @classmethod
     def create_order(cls, order: OrderRequestBody):
-        # Логируем данные запроса перед отправкой
         print("Creating order with payload:", asdict(order))
 
         try:
             response: httpx.Response = httpx.post(cls.BASE_URL, json=asdict(order))
-            response.raise_for_status()  # Проверяем на ошибку HTTP
+            response.raise_for_status()
         except httpx.HTTPStatusError as e:
             print(f"HTTP error occurred: {e}")
             print(f"Response status code: {e.response.status_code}")
             print(f"Response body: {e.response.text}")
-            raise  # Повторно выбрасываем исключение для дальнейшей обработки
+            raise
         return OrderResponse(**response.json())
 
     @classmethod
     def get_order(cls, order_id: str):
         try:
             response: httpx.Response = httpx.get(f"{cls.BASE_URL}/{order_id}")
-            response.raise_for_status()  # Проверяем на ошибку HTTP
+            response.raise_for_status()
         except httpx.HTTPStatusError as e:
             print(f"HTTP error occurred: {e}")
             print(f"Response status code: {e.response.status_code}")
             print(f"Response body: {e.response.text}")
-            raise  # Повторно выбрасываем исключение для дальнейшей обработки
+            raise
         return OrderResponse(**response.json())
