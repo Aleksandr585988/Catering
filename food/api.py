@@ -1,7 +1,9 @@
-from celery.result import AsyncResult
+
 from rest_framework import status, viewsets, routers
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import Dish, DishOrderItem, Order, Restaurant
 from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer
@@ -10,6 +12,30 @@ from shared.cache import CacheService
 from .services import schedule_order
 import json
 
+@csrf_exempt
+def bueno_webhook(request):
+    data: dict = json.loads(json.dumps(request.POST))
+    print("getting the bueno order from the cache and update the database instance")
+
+    return JsonResponse({"message": "ok"})
+# @csrf_exempt
+# def bueno_webhook(request):
+#     try:
+#         # Get POST data and convert it to a regular dictionary
+#         data = request.POST.dict()
+
+#         # Debugging output (remove in production)
+#         print(f"Received data: {data}")
+
+#         # You can add additional processing of the data here
+
+#         # Returning a successful response
+#         return JsonResponse({"message": "ok"})
+    
+#     except Exception as e:
+#         # Log any error that occurs
+#         print(f"Error processing webhook: {str(e)}")
+#         return JsonResponse({"message": "error", "details": str(e)}, status=500)
 
 
 class FoodAPIViewSet(viewsets.GenericViewSet):
@@ -47,9 +73,8 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
 
         if not isinstance(serializer.validated_data, dict):
-            raise ValueError(...)
-        
-        
+            raise ValueError("Invalid data format.")
+
         # Creates the order in the database
         order: Order = Order.objects.create(
             status=OrderStatus.NOT_STARTED,
@@ -75,7 +100,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
 
         schedule_order(order=order)
 
-        # OrdersService().schedule_order(order=order)
+
         print(f"New Food Order is created: {order.pk}.\nETA;{order.eta} ")
 
         # Creates a cacheable order structure to store in Redis 

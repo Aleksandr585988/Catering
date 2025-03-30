@@ -54,157 +54,227 @@ MELANGE HTTP GET /api/orders/<ID>
     }
 ```
 """
-
-import uuid
-from collections import defaultdict
-from datetime import datetime, date, time
+import random
 from time import sleep
 
-from shared.cache import CacheService
-
-import httpx
-from .models import DishOrderItem, Order
-from .enums import Restaurant
-
+from datetime import datetime, time, date
+from .models import Order, RestaurantOrder
+from .enums import Restaurant, OrderStatus
 from celery.result import AsyncResult
-from shared.cache import CacheService
+from .constants import RESTAURANT_TO_INTERNAL_STATUSES
 
-class OrderInCache:
-    """
-    {
-        "bueno"|"melange": {
-            "external_id": string,
-            "status": string,
-            "dishes": [
-                {
-                    "dish": string,
-                    "quantity": number,
-                }, ...
-            ]
+from .providers import melange, bueno
+
+from config import celery_app
+from dataclasses import asdict
+
+
+class OrderInDB:
+    def __init__(self, order: Order, internal_order_id: int) -> None:
+        self.order = order 
+        self.internal_order_id = internal_order_id
+        self.orders = {
+            restaurant_order.restaurant: restaurant_order
+            for restaurant_order in order.restaurant_orders.all()
         }
-    }
-    """
-     
-    def __init__(self) -> None:
-        self.orders: dict[str, dict[str, str | list[dict]]] = defaultdict(dict)
 
-    def append(self, restaurant: str, item: DishOrderItem):
-        if not self.orders[restaurant]:
-            self.orders[restaurant] = {
-                "external_id": "",
-                "status": "not_started",
-                "dishes": [
-                    {
-                        "dish": item.dish.name,
-                        "quantity": item.quantity,
-                    }
-                ],
-            }
-        else:
-            self.orders[restaurant]["dishes"].append(
-                {
-                "dish": item.dish.name,
-                "quantity": item.quantity,
-                }
+    def append(self, restaurant: Restaurant, item):
+        if restaurant.value not in self.orders:
+            self.orders[restaurant.value] = RestaurantOrder.objects.create(
+                order=self.order,
+                restaurant=restaurant.value,
+                status=OrderStatus.NOT_STARTED.value
+            )
+        self.orders[restaurant.value].save()
+
+class Uklon:
+    def deliver(self, order_in_db: OrderInDB):
+        print(f"Delivering order {order_in_db.internal_order_id} using Provider A")
+
+class Uber:
+    def deliver(self, order_in_db: OrderInDB):
+        print(f"Delivering order {order_in_db.internal_order_id} using Provider B")
+
+
+def select_delivery_provider() -> callable:
+    providers = [Uklon(), Uber()]    
+    return random.choice(providers)
+
+@celery_app.task
+def start_delivery(order_in_db: OrderInDB):
+    print("Starting delivery check...")
+    if validate_all_orders_cooked(order_in_db):
+        print("All restaurants are ready for delivery. Starting delivery...")
+        delivery_provider = select_delivery_provider()
+        delivery_provider.deliver(order_in_db)
+        print(f"Delivery started using provider {delivery_provider.__class__.__name__}")
+    else:
+        print("Not all restaurants are ready for delivery yet.")
+
+def validate_all_orders_cooked(order: OrderInDB) -> bool:
+    flag = True
+
+    for rest, _order in order.orders.items():
+        if rest == Restaurant.MELANGE:
+            if _order == Restaurant.MELANGE:
+                if _order["status"] != melange.OrderStatus.COOKED:
+                    flag = False
+                    break
+
+            if _order == Restaurant.BUENO:
+                if _order["status"] != melange.OrderStatus.COOKED:
+                    flag = False
+                    break
+
+        elif flag is True:
+            Order.objects.filter(id=order.internal_order_id).update(
+                status=OrderStatus.DRIVER_LOOKUP
             )
 
-# TODO uncomment
-# @celery_app.task
-def melange_order_processing(order: OrderInCache):
-    while (current_status := order.orders[Restaurant.MELANGE]["status"]) != "finished":
-        if current_status == "not_started":
-            if not order.orders[Restaurant.MELANGE]["external_id"]:  
-                payload = {"order": order.orders[Restaurant.MELANGE]["dishes"]}              
-                response = httpx.post("http://localhost:8001/api/orders", json=payload)
-                response.raise_for_status()
-                order.orders[Restaurant.MELANGE]["external_id"] = response.json()["id"]           
-            else:   
-                external_order_id = order.orders[Restaurant.MELANGE]["external_id"] 
-                response = httpx.get(
-                    f"http://localhost:8001/api/orders/{external_order_id}"
-                    )
-                response.raise_for_status()
+        return flag
 
-                order.orders[Restaurant.MELANGE]["status"] = response.json()["status"]
 
-                print(f"Current status is {current_status}. Waiting 1 second")
+#  TODO uncomment
+@celery_app.task
+def melange_order_processing(order: OrderInDB):
+    melange_order = order.orders.get(Restaurant.MELANGE.value)
+    
+    if not melange_order:
+        raise ValueError("No order found for Melange")
+    
+    provider = melange.Provider()
+
+    while (current_status := melange_order.status) != OrderStatus.DELIVERED:
+        if current_status == OrderStatus.NOT_STARTED:
+            if not melange_order.external_id:
+                order_request_body = melange.OrderRequestBody(
+                    order=[
+                        melange.OrderItem(dish=item.dish.name, quantity=item.quantity)
+                        for item in order.order.items.all()
+                        if item.dish.restaurant.name.lower() == Restaurant.MELANGE.value.lower()
+                    ]
+                )
+
+                response: melange.OrderResponse = provider.create_order(order_request_body)
+                melange_order.external_id = response.id
+
+            else:
+                external_order_id = melange_order.external_id
+                response = provider.get_order(order_id=external_order_id)
+
+                if current_status != response.status:
+                    melange_order.status = response.status
+                    Order.update_from_provider_status(id_=order.internal_order_id, status=response.status)
+
+                print(f"Current status is {melange_order.status}. Waiting 1 second")
                 sleep(1)
 
-        elif current_status == "cooking":
-            external_order_id = order.orders[Restaurant.MELANGE]["external_id"] 
-            response = httpx.get(
-                f"http://localhost:8001/api/orders/{external_order_id}"
-                )
-            response.raise_for_status()
+        elif current_status == melange.OrderStatus.COOKING:
+            external_order_id = melange_order.external_id
+            response = provider.get_order(order_id=external_order_id)
 
-            order.orders[Restaurant.MELANGE]["status"] = response.json()["status"]
+            if current_status != response.status:
+                melange_order.status = response.status
+                Order.update_from_provider_status(id_=order.internal_order_id, status=response.status)
 
+            print(f"Current status is {current_status}. Waiting 3 seconds")
             sleep(3)
-            print(f"Current status is {current_status}. Waiting 3 second")
 
-        elif current_status == "cooked":
-            print(f"CALLING DELIVERY SERVICE TO PASS THE FAOOD ORDER")
+        elif current_status == melange.OrderStatus.COOKED:
+            validate_all_orders_cooked(order)
+            break
 
         else:
             raise ValueError(f"STATUS {current_status} is not supported!")
 
+    melange_order.save()
 
-def bueno_order_processing(order: OrderInCache):
-    print("BUENO========================")
-    print(order.orders)
-    print("BUENO========================")
 
-# TODO uncomment
-# @celery_app.task
+@celery_app.task
+def bueno_order_processing(internal_order_id: int):
+    provider = bueno.Provider()
+
+    if not isinstance(internal_order_id, int):
+        raise TypeError(f"Expected internal_order_id to be int, got {type(internal_order_id)}")
+
+    order = Order.objects.get(id=internal_order_id)
+
+    order_in_db = OrderInDB(order, internal_order_id=internal_order_id)
+
+    bueno_order = order_in_db.orders.get(Restaurant.BUENO.value)
+    if not bueno_order:
+        raise ValueError("No order found for Bueno")
+
+    response: bueno.OrderResponse = provider.create_order(
+        bueno.OrderRequestBody(
+            order=[
+                bueno.OrderItem(dish=item.dish.name, quantity=item.quantity)
+                for item in order.items.all()
+                if item.dish.restaurant.name.lower() == Restaurant.BUENO.value.lower()
+            ]
+        )
+    )
+
+    # Update order with external ID
+    bueno_order.external_id = response.id
+    bueno_order.save()
+
+    print("BUENO ORDER PROCESSED")
+    return
+
+#  TODO uncomment
+@celery_app.task
 def _schedule_order(order: Order):
-    """Start processing restaurants orders.
-
-    WORKFLOW:
-    1. create temporary orders
-    2. call restaurants APIs
-    3. process orders in background
-    print(f"Order started processing...{order}")"
-
-    NOTES
-    - [order: Order] includes all restaurantes
-    - each provider task will run ``validate_external_orders_ready(order)``
-        and the last one will update the status to ``DRIVER_LOOKUP``
-    """
-
-    order_in_cache = OrderInCache()
+    order_in_db = OrderInDB(order)
 
     for item in order.items.all():
-        if (restaurant := item.dish.restaurant.name.lower()) == Restaurant.MELANGE:
-            order_in_cache.append(restaurant, item)
-        elif item.dish.restaurant.name.lower() == Restaurant.BUENO:
-            order_in_cache.append(restaurant, item)
+        if (restaurant := Restaurant[item.dish.restaurant.name.upper()]) in [Restaurant.MELANGE, Restaurant.BUENO]:
+            order_in_db.append(restaurant, item)
         else:
-            raise ValueError(f"Can not create order for {item.dish.restaurant.name} restaurant")
-        
+            raise ValueError(f"Cannot create order for {item.dish.restaurant.name} restaurant")
 
-        order_key = str(uuid.uuid4)
-        cache = CacheService()
+    melange_order_processing(order_in_db)
+    bueno_order_processing(order_in_db)
+    start_delivery(order_in_db)
 
-        cache.set(
-            namespace="restaurants_order", key=order_key, instance=order_in_cache.orders
-            )
-        
-    melange_order_processing(order_in_cache)
-    bueno_order_processing(order_in_cache)
+# @celery_app.task
+# def _schedule_order(order: Order):
+#     order_in_db = OrderInDB(order, internal_order_id=order.pk)
+
+#     for item in order.items.all():
+#         if (restaurant := Restaurant[item.dish.restaurant.name.upper()]) in [Restaurant.MELANGE, Restaurant.BUENO]:
+#             order_in_db.append(restaurant, item)
+#         else:
+#             raise ValueError(f"Cannot create order for {item.dish.restaurant.name} restaurant")
+
+#     if Restaurant.MELANGE.value in order_in_db.orders:
+#         melange_order_processing.delay(order_in_db)
+
+#     if Restaurant.BUENO.value in order_in_db.orders:
+#         bueno_order_processing.delay(order_in_db)
+
+#     if validate_all_orders_cooked(order_in_db):
+#         start_delivery(order_in_db)
+#     else:
+#         print("Not all restaurants are ready for delivery yet.")
+
+
 
 def schedule_order(order: Order)  -> AsyncResult:
     assert type(order.eta) is date
 
+    print(f"Scheduling order with eta {order.eta}")
+
     # todo remove
-    _schedule_order(order)
-    return None
+    # _schedule_order(order)
+    # return None
 
     # 2025-03-06  -> 2025-03-06-00:00:00 UTC
     if order.eta == datetime.today():
         print(f"The order will be started processing now")
-        return schedule_order_task.apply_async(args=(order,))
+        return _schedule_order.apply_async(args=(order,))
 
     else:
         eta = datetime.combine(order.eta, time(hour=3))
         print(f"The order will be started processing {eta}")
-        return schedule_order_task.apply_async(args=(order,), eta=eta)
+        return _schedule_order.apply_async(args=(order,), eta=eta)

@@ -1,5 +1,9 @@
 from django.db import models
 from django.conf import settings
+from typing import Literal
+from .constants import RESTAURANT_TO_INTERNAL_STATUSES
+from .enums import OrderStatus
+from .enums import Restaurant as RestaurantEnum
 
 
 class Restaurant(models.Model):
@@ -50,6 +54,33 @@ class Order(models.Model):
     
     def __repr__(self) -> str:
         return super().__str__()
+    
+    @classmethod
+    def update_from_provider_status(cls, id_: int, status: str | Literal["finished"]) -> None:
+        if status == "finished":
+            cls.objects.filter(id=id_).update(status=OrderStatus.DRIVER_LOOKUP)
+        else:
+            cls.objects.filter(id=id_).update(
+                status=RESTAURANT_TO_INTERNAL_STATUSES[RestaurantEnum.MELANGE][
+                    status
+                ]
+            )
+
+
+class RestaurantOrder(models.Model):
+    class Meta:
+        db_table = "restaurant_order"
+        
+    external_id = models.CharField(max_length=100, unique=True, blank=True, null=True)
+    restaurant = models.CharField(max_length=20)
+    status = models.CharField(max_length=20)  
+    order = models.ForeignKey("Order", on_delete=models.CASCADE, related_name="restaurant_orders")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"[{self.restaurant}] Order {self.external_id or 'pending'} - {self.status}"
 
 
 class DishOrderItem(models.Model):
