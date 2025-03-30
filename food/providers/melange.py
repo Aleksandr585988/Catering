@@ -27,6 +27,7 @@ class Provider:
 
     @classmethod
     def create_order(cls, order: OrderRequestBody):
+        
         print("Creating order with payload:", asdict(order))
 
         try:

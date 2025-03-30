@@ -31,7 +31,7 @@ class OrderResponse:
 
 
 class Provider:
-    BASE_URL = "http://localhost:8002/api/orders"
+    BASE_URL = "http://localhost:8002"
 
     @classmethod
     def create_order(cls, order: OrderRequestBody):
