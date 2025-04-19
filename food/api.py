@@ -5,46 +5,49 @@ from rest_framework.response import Response
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from .services import OrderInDB, validate_all_orders_cooked
+
 from .models import Dish, DishOrderItem, Order, Restaurant, RestaurantOrder
+from .services import OrderInDB
 from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer
 from .enums import OrderStatus
 from shared.cache import CacheService
 from .services import schedule_order
 import json
-from time import sleep
-
-import json
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from .models import RestaurantOrder, Restaurant
-from time import sleep
-from .services import OrderInDB
-
-from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
-import json
-from .models import Order
-from .enums import OrderStatus
-
 
 @csrf_exempt
 def bueno_webhook(request):
-    print("Received webhook data")
-    try:
-        data = request.POST.dict()
-        
-        order_in_bd = OrderInDB()
-        _order: dict = order_in_bd.get("bueno_orders", data["id"])
-          
-        order = Order.objects.get(id=_order["internal_order_id"])
+    print("Webhook triggered")
 
-        Order.update_from_provider_status(id_=order.internal_order_id, status="finished")
-        
-        return JsonResponse({"message": "ok"})
-    except Exception as e:
-        print(f"Error in webhook: {e}")
-        return JsonResponse({"message": "error", "details": str(e)}, status=500)
+    if request.method != 'POST':
+        return JsonResponse({"message": "Invalid method"}, status=405)
+
+    if request.content_type == "application/json":
+        try:
+            import json
+            data = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            return JsonResponse({"message": "Invalid JSON"}, status=400)
+    else:
+
+        data = request.POST.dict()
+
+    print(f"Parsed data: {data}")
+
+    external_id = data.get('id')
+    status = data.get('status')
+
+    if not external_id or not status:
+        return JsonResponse({"message": "Missing required fields"}, status=400)
+
+    order = RestaurantOrder.objects.filter(external_id=external_id).first()
+
+    if order:
+        order.status = status
+        order.save()
+        print(f"Order {external_id} updated to {status}")
+        return JsonResponse({"message": "Order status updated successfully"})
+    
+    return JsonResponse({"message": "Order not found"}, status=404)
 
 
 class FoodAPIViewSet(viewsets.GenericViewSet):

@@ -1,18 +1,20 @@
 
-import random
+
 from time import sleep
 from django.core.exceptions import ObjectDoesNotExist
 
 from datetime import datetime, time, date
-from .models import Order, RestaurantOrder
+from .models import Order, RestaurantOrder, Restaurant
 from .enums import Restaurant, OrderStatus
+from .models import Restaurant as RestaurantModels
 from celery.result import AsyncResult
 from .constants import RESTAURANT_TO_INTERNAL_STATUSES
 
-from .providers import melange, bueno
+from .providers import melange, bueno, uklon
 
 from config import celery_app
 from dataclasses import asdict
+from typing import Iterable
 
 
 class OrderInDB:
@@ -33,57 +35,36 @@ class OrderInDB:
             )
         self.orders[restaurant.value].save()
 
-class Uklon:
-    def deliver(self, order_in_db: OrderInDB):
-        print(f"Delivering order {order_in_db.internal_order_id} using Provider A")
-
-class Uber:
-    def deliver(self, order_in_db: OrderInDB):
-        print(f"Delivering order {order_in_db.internal_order_id} using Provider B")
-
-
-def select_delivery_provider() -> callable:
-    providers = [Uklon(), Uber()]    
-    return random.choice(providers)
-
-@celery_app.task
-def start_delivery(order_in_db: OrderInDB):
-    print("Starting delivery check...")
-    if validate_all_orders_cooked(order_in_db):
-        print("All restaurants are ready for delivery. Starting delivery...")
-        delivery_provider = select_delivery_provider()
-        delivery_provider.deliver(order_in_db)
-        print(f"Delivery started using provider {delivery_provider.__class__.__name__}")
-    else:
-        print("Not all restaurants are ready for delivery yet.")
-
-def validate_all_orders_cooked(order: OrderInDB) -> bool:
+def validate_external_orders_ready(order: OrderInDB) -> bool:
     flag = True
 
     for rest, _order in order.orders.items():
         if rest == Restaurant.MELANGE:
             if _order == Restaurant.MELANGE:
+                if _order["status"] not in (melange.OrderStatus.COOKED, melange.OrderStatus.FINISHED):
+                    flag = False
+                    break
+
+            elif _order == Restaurant.BUENO:
                 if _order["status"] != melange.OrderStatus.COOKED:
                     flag = False
                     break
 
-            if _order == Restaurant.BUENO:
-                if _order["status"] != melange.OrderStatus.COOKED:
-                    flag = False
-                    break
+    # if flag is True:
+    #     Order.objects.filter(id=order.internal_order_id).update(
+    #         status=OrderStatus.DRIVER_LOOKUP
+    #     )
 
-        elif flag is True:
-            Order.objects.filter(id=order.internal_order_id).update(
-                status=OrderStatus.DRIVER_LOOKUP
-            )
-
-        return flag
+    return flag
 
 
-#  TODO uncomment
+# TODO uncomment
 @celery_app.task
-def melange_order_processing(order: OrderInDB):
-    melange_order = order.orders.get(Restaurant.MELANGE.value)
+def melange_order_processing(internal_order_id: int):
+    order = Order.objects.get(id=internal_order_id)
+    order_in_db = OrderInDB(order, internal_order_id)
+
+    melange_order = order_in_db.orders.get(Restaurant.MELANGE.value)
     
     if not melange_order:
         raise ValueError("No order found for Melange")
@@ -96,7 +77,7 @@ def melange_order_processing(order: OrderInDB):
                 order_request_body = melange.OrderRequestBody(
                     order=[
                         melange.OrderItem(dish=item.dish.name, quantity=item.quantity)
-                        for item in order.order.items.all()
+                        for item in order.items.all()
                         if item.dish.restaurant.name.lower() == Restaurant.MELANGE.value.lower()
                     ]
                 )
@@ -110,7 +91,7 @@ def melange_order_processing(order: OrderInDB):
 
                 if current_status != response.status:
                     melange_order.status = response.status
-                    Order.update_from_provider_status(id_=order.internal_order_id, status=response.status)
+                    Order.update_from_provider_status(id_=internal_order_id, status=response.status)
 
                 print(f"Current status is {melange_order.status}. Waiting 1 second")
                 sleep(1)
@@ -121,14 +102,14 @@ def melange_order_processing(order: OrderInDB):
 
             if current_status != response.status:
                 melange_order.status = response.status
-                Order.update_from_provider_status(id_=order.internal_order_id, status=response.status)
+                Order.update_from_provider_status(id_=internal_order_id, status=response.status)
 
             print(f"Current status is {current_status}. Waiting 3 seconds")
             sleep(3)
 
         elif current_status == melange.OrderStatus.COOKED:
             print(f"Current status is {current_status}")
-            validate_all_orders_cooked(order)
+            validate_external_orders_ready(order_in_db)
             break
 
         else:
@@ -167,9 +148,51 @@ def bueno_order_processing(internal_order_id: int):
     bueno_order.save()
 
     print("BUENO ORDER PROCESSED")
-    
 
-#  TODO uncomment
+@celery_app.task
+def delivery_order(order: OrderInDB, restaurants: Iterable[RestaurantModels]):
+    print("DELIVERY PROCESSING STARTED")
+
+    while True:
+        if validate_external_orders_ready(order):
+            _delivery_order_task(order, restaurants)
+        break
+
+    print("DELIVERED all the orders...")
+
+
+def _delivery_order_task(order: OrderInDB, restaurants: Iterable[RestaurantModels]):
+    provider = uklon.Provider()
+
+    print(f"🚚 DELIVERY PROCESSING STARTED")
+
+    addresses: list[str] = []
+    comments: list[str] = []
+
+    for rest in restaurants:
+        addresses.append(rest.address)
+        external_id: str = order.orders[rest.name.lower()].external_id
+        comments.append(f"ORDER: {external_id}")
+
+    order_payload = uklon.OrderRequestBody(addresses=addresses, comments=comments)
+    _response: uklon.OrderResponse = provider.create_order(order_payload)
+    
+    current_status: uklon.OrderStatus = uklon.OrderStatus.NOT_STARTED
+   
+    while current_status != uklon.OrderStatus.DELIVERED:
+        response: uklon.OrderResponse = provider.get_order(_response.id)
+
+        if current_status == response.status:
+            sleep(1)
+            continue
+        
+        current_status = response.status 
+
+        # update storage
+        Order.update_from_provider_status(id_=order.internal_order_id, status=current_status, delivery=True)
+
+
+# TODO uncomment
 @celery_app.task
 def _schedule_order(order: Order):
     if not order.pk:
@@ -177,18 +200,20 @@ def _schedule_order(order: Order):
         order.save()
     
     order_in_db = OrderInDB(order, internal_order_id=order.pk)
+    delivery_restaurants: set[RestaurantModels] = set()
 
     for item in order.items.all():
         if (restaurant := Restaurant[item.dish.restaurant.name.upper()]) in [Restaurant.MELANGE, Restaurant.BUENO]:
+            delivery_restaurants.add(item.dish.restaurant)
             order_in_db.append(restaurant, item)
         else:
             raise ValueError(f"Cannot create order for {item.dish.restaurant.name} restaurant")
 
-    melange_order_processing.delay(order_in_db)
+    melange_order_processing.delay(order_in_db.internal_order_id)
     bueno_order_processing.delay(order_in_db.internal_order_id)
+    delivery_order.delay(order_in_db, delivery_restaurants)
 
-    start_delivery(order_in_db)
-    
+
 def schedule_order(order: Order)  -> AsyncResult:
     assert type(order.eta) is date
 

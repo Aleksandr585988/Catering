@@ -13,7 +13,7 @@ def import_csv(self, request, queryset):
 # admin.site.register(Dish)
 @admin.register(Dish)
 class DishAdmin(admin.ModelAdmin):
-    list_display = ("name", "price", "restaurant")
+    list_display = ("id", "name", "price", "restaurant")
     search_fields = ("name",)
     list_filter = ("name", "restaurant")
     actionss = ["import_csv"]

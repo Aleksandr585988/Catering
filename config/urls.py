@@ -16,7 +16,8 @@ urlpatterns = ([
     # ==================
     path("admin/", admin.site.urls),
     path('auth/token/', TokenObtainPairView.as_view()),
-    path("webhooks/bueno/", bueno_webhook),
+    # path("webhooks/bueno/", bueno_webhook),
+    path("webhooks/bueno", bueno_webhook),
 
 ] + users_router.urls 
   + food_router.urls)
