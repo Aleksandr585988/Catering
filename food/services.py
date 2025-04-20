@@ -1,5 +1,4 @@
 
-
 from time import sleep
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -72,7 +71,7 @@ def melange_order_processing(internal_order_id: int):
     provider = melange.Provider()
 
     while (current_status := melange_order.status) != OrderStatus.DELIVERED:
-        if current_status == OrderStatus.NOT_STARTED:
+        if current_status == melange.OrderStatus.NOT_STARTED:
             if not melange_order.external_id:
                 order_request_body = melange.OrderRequestBody(
                     order=[
@@ -188,7 +187,6 @@ def _delivery_order_task(order: OrderInDB, restaurants: Iterable[RestaurantModel
         
         current_status = response.status 
 
-        # update storage
         Order.update_from_provider_status(id_=order.internal_order_id, status=current_status, delivery=True)
 
 

@@ -58,21 +58,24 @@ class Order(models.Model):
        
     @classmethod
     def update_from_provider_status(cls, id_: int, status: str, delivery=False) -> None:
-        print(f"[DEBUG] Called update_from_provider_status with id={id_}, status={status}, delivery={delivery}")
-        if delivery is False:            
+        if delivery is False:
             if status == "finished":
                 cls.objects.filter(id=id_).update(status=OrderStatus.DRIVER_LOOKUP)
             else:
                 cls.objects.filter(id=id_).update(
-                    status=RESTAURANT_TO_INTERNAL_STATUSES[RestaurantEnum.MELANGE][status]
+                    status=RESTAURANT_TO_INTERNAL_STATUSES[RestaurantEnum.MELANGE][
+                        status
+                    ]
                 )
         else:
             if status == "delivered":
                 cls.objects.filter(id=id_).update(status=OrderStatus.DELIVERED)
             elif status == "delivery":
                 cls.objects.filter(id=id_).update(status=OrderStatus.DELIVERY)
+            elif status == "delivered":
+                cls.objects.filter(id=id_).update(status=OrderStatus.DELIVERED)
             else:
-                raise ValueError(f"Status {status} is not saported!!!")
+                raise ValueError(f"Status {status} is not supported")
 
 class RestaurantOrder(models.Model):
     class Meta:

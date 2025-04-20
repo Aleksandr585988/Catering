@@ -20,8 +20,6 @@ class OrderItem(BaseModel):
 class OrderRequestBody(BaseModel):
     order: list[OrderItem]
 
-
-# business model of the application
 async def update_order_status(order_id: str):
     for status in ORDER_STATUSES[1:]:
         await asyncio.sleep(random.randint(10, 20))
@@ -33,9 +31,9 @@ async def update_order_status(order_id: str):
 async def make_order(order: OrderRequestBody, background_tasks: BackgroundTasks):
     print(order)
     order_id = str(uuid.uuid4())
-    STORAGE[order_id] = {"id": order_id, "status": "not_started"}
+    STORAGE[order_id] = {"id": order_id, "status": "not started"}
     background_tasks.add_task(update_order_status, order_id)
-    return {"id": order_id, "status": "not_started"}
+    return {"id": order_id, "status": "not started"}
 
 
 @app.get("/api/orders/{order_id}")
