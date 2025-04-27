@@ -145,6 +145,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -174,7 +175,7 @@ AUTH_USER_MODEL = "users.User"
 
 # MAILING SECTION
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "localhost"
+EMAIL_HOST = getenv("SMTP_HOST", default="localhost")
 EMAIL_PORT = 1025
 EMAIL_HOST_USER = "mailpit"
 EMAIL_HOST_PASSWORD = "mailpit"
