@@ -15,6 +15,10 @@ worker:
 infra:
 	docker compose up -d test_melange test_bueno test_uklon database cache broker mailing
 
+.PHONY: prod
+prod:
+	docker compose up -d api
+
 .PHONY: bueno
 bueno:
 	uvicorn tests.providers.bueno:app --reload --port 8002

@@ -36,14 +36,14 @@
 3. Readiness and clarity: JSON looks more structured and more convenient for understanding, especially when the data is complex or containing several levels of investment.
 4. Scale: If you want to add more data in the future, JSON is easier to scale as you can simply add new records without much restriction.
 
-### DEPLOYMENT
-Set CI/CD
-code quality tools
-tests
-Select Cloud Provider
-Digital Ocean
-Rent instance (machine)
-Clone Project
+# DEPLOYMENT
+- Set CI/CD
+    - code quality tools
+    - tests
+- Select Cloud Provider
+    - Digital Ocean
+    - Rent instance (machine)
+    - Clone Project
 Infra:
 Native (bare metal)
 Machine with application
