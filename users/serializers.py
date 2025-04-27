@@ -1,8 +1,8 @@
-from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
 from rest_framework import serializers
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
 
@@ -40,5 +40,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         if not self.user.is_active:
-            raise AuthenticationFailed("User account is not activated.", code="user_not_active")
+            raise AuthenticationFailed(
+                "User account is not activated.", code="user_not_active"
+            )
         return data

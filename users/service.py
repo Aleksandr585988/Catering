@@ -1,10 +1,11 @@
-import uuid
 import logging
-from django.core.mail import send_mail
-from django.contrib.auth import get_user_model
+import uuid
 
-from shared.cache import CacheService
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+
 from config import celery_app
+from shared.cache import CacheService
 
 User = get_user_model()
 # CACHE: dict[uuid.UUID, dict] = {}
@@ -37,7 +38,7 @@ class Activator:
 
     def send_user_activation_email(self, activation_key: uuid.UUID):
         link = f"https://frontend.com/users/activation/{activation_key}"
-        
+
         if self.email is None:
             raise ValueError("Email is required for activation")
         else:
@@ -83,4 +84,3 @@ class Activator:
         user.is_active = True
         user.save()
         logger.info(f"User {user.email} has been activated.")
-

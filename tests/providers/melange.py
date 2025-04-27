@@ -6,7 +6,7 @@ from fastapi import BackgroundTasks, FastAPI
 from pydantic import BaseModel
 
 STORAGE: dict[str, dict] = {}
-ORDER_STATUSES = ("not started", "cooking", "cooked", "finished")
+ORDER_STATUSES = ("not_started", "cooking", "cooked", "finished")
 
 
 app = FastAPI()

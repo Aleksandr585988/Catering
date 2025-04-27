@@ -1,5 +1,5 @@
 services:
-  api:
+  api: &api
     build: .
     container_name: catering_api
     ports:
@@ -7,7 +7,20 @@ services:
     volumes:
       - .:/app/
     depends_on:
+      - worker
+      
+  worker:
+    <<: *api
+    build: .
+    container_name: catering_worker
+    entrypoint: bash
+    command: -c "watchmedo auto-restart --pattern="*.py" --recursive -- cmd /c "celery -A config worker -l INFO --pool=solo""
+    ports: []
+    depends_on:
       - database
+      - cache
+      - broker
+      - mailing
 
   database:
     image: "postgres:17"
@@ -43,6 +56,34 @@ services:
       MP_MAX_MESSAGES: 100
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+
+  test_melange:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: melange
+    container_name: catering_test_melange
+    ports:
+      - "8001:8000"
+
+  test_bueno:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: bueno
+    container_name: catering_test_bueno
+    ports:
+      - "8002:8000"
+
+  test_uklon:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: uklon
+    container_name: catering_test_uklon
+    ports:
+      - "8003:8000"
 
 volumes:
   pg_data: {}
