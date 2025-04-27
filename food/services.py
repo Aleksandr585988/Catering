@@ -8,10 +8,10 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from config import celery_app
 
+
 from .constants import RESTAURANT_TO_INTERNAL_STATUSES
 from .enums import OrderStatus, Restaurant
 from .models import Order
-from .models import Restaurant
 from .models import Restaurant as RestaurantModels
 from .models import RestaurantOrder
 from .providers import bueno, melange, uklon
