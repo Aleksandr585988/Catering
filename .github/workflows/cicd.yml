@@ -35,7 +35,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           port: ${{ secrets.SERVER_PORT }}
           username: ${{ secrets.SERVER_USERNAME }}
-          key: ${{ secrets.SERVER_SSH_ORIVET_KEY }}
+          key: ${{ secrets.SERVER_SSH_PRIVATE_KEY }}
           script: |
             cd ~/Catering 
             git pull origin main
