@@ -24,23 +24,23 @@ jobs:
         run: echo "Linting passed"
 
 
-  # deployment:
-  #   runs-on: ubuntu-latest
-  #   needs: code-quality
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: executing remote ssh commands using SSH PRIVATE KEY
-  #       uses: appleboy/ssh-action@v1
-  #       with:
-  #         host: ${{ secrets.SERVER_HOST }}
-  #         port: ${{ secrets.SERVER_PORT }}
-  #         username: ${{ secrets.SERVER_USERNAME }}
-  #         key: ${{ secrets.SERVER_SSH_ORIVET_KEY }}
-  #         script: |
-  #           cd ~/hillel_catering_api
-  #           git pull origin main
-  #           docker compose build
-  #           docker compose down
-  #           docker compose up -d api
-  #           docker compose exec api python manage.py migrate
-  #           echo "🚀 Deployment is done"
+  deployment:
+    runs-on: ubuntu-latest
+    needs: code-quality
+    steps:
+      - uses: actions/checkout@v4
+      - name: executing remote ssh commands using SSH PRIVATE KEY
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_ORIVET_KEY }}
+          script: |
+            cd ~/Catering 
+            git pull origin main
+            docker compose build
+            docker compose down
+            docker compose up -d api
+            docker compose exec api python manage.py migrate
+            echo "🚀 Deployment is done"
