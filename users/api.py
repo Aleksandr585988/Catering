@@ -1,14 +1,14 @@
-
-from rest_framework import status, permissions, viewsets, routers
+from rest_framework import permissions, routers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .serializers import (UserRegistrationSerializer, UserPublicSerializer,
-                          UserActivationSerializer, CustomTokenObtainPairSerializer)
 from users.service import Activator
 
+from .serializers import (CustomTokenObtainPairSerializer,
+                          UserActivationSerializer, UserPublicSerializer,
+                          UserRegistrationSerializer)
 
 # POC
 # @celery_app.task

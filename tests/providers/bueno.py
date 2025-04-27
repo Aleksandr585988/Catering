@@ -7,9 +7,9 @@ from fastapi import BackgroundTasks, FastAPI
 from pydantic import BaseModel
 
 STORAGE: dict[str, dict] = {}
-ORDER_STATUSES = ("not started", "cooking", "cooked", "finished")
+ORDER_STATUSES = ("not_started", "cooking", "cooked", "finished")
 
-CATERING_API_WEBHOOK_URL = "http://localhost:8000/webhooks/bueno"
+CATERING_API_WEBHOOK_URL = "http://localhost:8000/webhooks/bueno/"
 
 
 app = FastAPI()
@@ -33,7 +33,7 @@ async def update_order_status(order_id: str):
 
         async with httpx.AsyncClient() as client:
             await client.post(
-                CATERING_API_WEBHOOK_URL, data={"id": order_id, "status": status}
+                CATERING_API_WEBHOOK_URL, json={"id": order_id, "status": status}
             )
 
 

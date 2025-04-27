@@ -1,5 +1,6 @@
 from enum import StrEnum, auto
 
+
 class Restaurant(StrEnum):
     BUENO = auto()
     MELANGE = auto()

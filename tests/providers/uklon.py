@@ -15,7 +15,7 @@ app = FastAPI()
 class OrderRequestBody(BaseModel):
     addresses: list[str] = Field(min_length=1)
     comments: list[str] = Field(min_length=1)
-    
+
 
 async def delivery(order_id: str):
     for address in STORAGE[order_id]["addresses"]:
@@ -31,11 +31,11 @@ async def update_order_status(order_id: str):
         # Случайно меняем координаты, как будто курьер движется
         STORAGE[order_id]["location"] = {
             "lat": round(random.uniform(50.40, 50.45), 6),
-            "lon": round(random.uniform(30.50, 30.55), 6)
+            "lon": round(random.uniform(30.50, 30.55), 6),
         }
 
         if status == "delivery":
-          await delivery(order_id)
+            await delivery(order_id)
 
         STORAGE[order_id]["status"] = status
         print(f"UKLON [{order_id}] --> {status}")
@@ -50,14 +50,11 @@ async def make_order(order: OrderRequestBody, background_tasks: BackgroundTasks)
         "status": "not started",
         "addresses": order.addresses,
         "comments": order.comments,
-        "location": {
-            "lat": 50.4501,  # стартовые координаты
-            "lon": 30.5234
-        }
+        "location": {"lat": 50.4501, "lon": 30.5234},  # стартовые координаты
     }
     background_tasks.add_task(update_order_status, order_id)
 
-    # return {"id": order_id, "status": "not started"}
+    # return {"id": order_id, "status": "not_started"}
 
     return STORAGE.get(order_id, {"error": "No such order"})
 

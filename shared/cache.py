@@ -29,5 +29,5 @@ class CacheService:
         result: str = self.connection.get(self._build_key(namespace, key))
         if result is None:
             return None
-        
+
         return json.loads(result)

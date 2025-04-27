@@ -1,53 +1,32 @@
+import json
 
-from rest_framework import status, viewsets, routers
+from django.http import HttpResponseBadRequest, JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework import routers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
-
-from .models import Dish, DishOrderItem, Order, Restaurant, RestaurantOrder
-from .services import OrderInDB
-from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer
-from .enums import OrderStatus
 from shared.cache import CacheService
-from .services import schedule_order
-import json
+
+from .enums import OrderStatus
+from .models import Dish, DishOrderItem, Order, Restaurant, RestaurantOrder
+from .serializers import (DishSerializer, OrderCreateSerializer,
+                          RestaurantSerializer)
+from .services import OrderInCache, schedule_order
+
 
 @csrf_exempt
 def bueno_webhook(request):
-    print("Webhook triggered")
-
-    if request.method != 'POST':
-        return JsonResponse({"message": "Invalid method"}, status=405)
-
-    if request.content_type == "application/json":
+    if request.method == "POST":
         try:
-            import json
-            data = json.loads(request.body.decode('utf-8'))
+            data = json.loads(request.body)
         except json.JSONDecodeError:
-            return JsonResponse({"message": "Invalid JSON"}, status=400)
-    else:
+            return HttpResponseBadRequest("Invalid JSON")
 
-        data = request.POST.dict()
+        print("Получен вебхук BUENO:", data)
+        return JsonResponse({"message": "ok"})
 
-    print(f"Parsed data: {data}")
-
-    external_id = data.get('id')
-    status = data.get('status')
-
-    if not external_id or not status:
-        return JsonResponse({"message": "Missing required fields"}, status=400)
-
-    order = RestaurantOrder.objects.filter(external_id=external_id).first()
-
-    if order:
-        order.status = status
-        order.save()
-        print(f"Order {external_id} updated to {status}")
-        return JsonResponse({"message": "Order status updated successfully"})
-    
-    return JsonResponse({"message": "Order not found"}, status=404)
+    return JsonResponse({"error": "Method Not Allowed"}, status=405)
 
 
 class FoodAPIViewSet(viewsets.GenericViewSet):
@@ -57,7 +36,7 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
     @action(methods=["get"], detail=False)
     def dishes(self, request):
         dishes = Dish.objects.all()
-        serializer = DishSerializer(dishes, many=True)       
+        serializer = DishSerializer(dishes, many=True)
         return Response(data=serializer.data)
 
     # HTTP GET /food/orders
@@ -93,29 +72,26 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
             user=request.user,
             eta=serializer.validated_data["eta"],
         )
-        
+
         # Proces the food items (dishes) ordered
         try:
             dishes_order = serializer.validated_data["food"]
-            
+
         except KeyError as error:
             raise ValueError("Food order is not properly built")
 
         # Creates DishOrderItems and associate them with the order
         for dish_order in dishes_order:
             instance = DishOrderItem.objects.create(
-                dish=dish_order["dish"], 
-                quantity=dish_order["quantity"], 
-                order=order
+                dish=dish_order["dish"], quantity=dish_order["quantity"], order=order
             )
             print(f"New Dish Order Item is created: {instance.pk}")
 
         schedule_order(order=order)
 
-
         print(f"New Food Order is created: {order.pk}.\nETA;{order.eta} ")
 
-        # Creates a cacheable order structure to store in Redis 
+        # Creates a cacheable order structure to store in Redis
         order_cache = {
             "id": order.pk,
             "status": order.status,
@@ -131,11 +107,13 @@ class FoodAPIViewSet(viewsets.GenericViewSet):
         if cached_order:
             return Response(
                 data=json.loads(cached_order),
-                status=status.HTTP_200_OK,              
+                status=status.HTTP_200_OK,
             )
 
         # Stores the order in Redis cache with a TTL (1 hour)
-        self.cache_service.set(namespace="order", key=str(order.pk), instance=order_cache, ttl=3600)
+        self.cache_service.set(
+            namespace="order", key=str(order.pk), instance=order_cache, ttl=3600
+        )
         cached_order = self.cache_service.get(namespace="order", key=str(order.pk))
 
         # Returns the response
@@ -171,6 +149,10 @@ class DishViewSet(viewsets.ModelViewSet):
 
 
 router = routers.DefaultRouter()
-router.register(prefix="food", viewset=FoodAPIViewSet, basename="food",)
+router.register(
+    prefix="food",
+    viewset=FoodAPIViewSet,
+    basename="food",
+)
 router.register(prefix="restaurants", viewset=RestaurantViewSet, basename="restaurant")
 router.register(prefix="dishes", viewset=DishViewSet, basename="dish")

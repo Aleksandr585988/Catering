@@ -11,7 +11,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
 class DishSerializer(serializers.ModelSerializer):
     restaurant = serializers.PrimaryKeyRelatedField(queryset=Restaurant.objects.all())
-    restaurant_details = RestaurantSerializer(source='restaurant', read_only=True)
+    restaurant_details = RestaurantSerializer(source="restaurant", read_only=True)
 
     class Meta:
         model = Dish

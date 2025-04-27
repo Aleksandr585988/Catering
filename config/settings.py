@@ -11,8 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from datetime import timedelta
+from os import getenv
 from pathlib import Path
-
 
 from django.core.mail.backends.smtp import EmailBackend
 
@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     "delivery",
     "users",
     "shared",
-    
 ]
 
 MIDDLEWARE = [
@@ -103,15 +102,12 @@ DATABASES = {
         "PASSWORD": "Olia19101989",
         "HOST": "localhost",
         "PORT": "5432",
-        "ATOMIC_REQUESTS": True
+        "ATOMIC_REQUESTS": True,
     }
 }
 
 # Cache
 CACHE_CONNECTION_STRING = "redis://localhost:6379/0"
-
-
-
 
 
 # Password validation

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.http.response import HttpResponseRedirect
-from .models import Dish, Restaurant, Order, DishOrderItem, RestaurantOrder
+
+from .models import Dish, DishOrderItem, Order, Restaurant, RestaurantOrder
 
 admin.site.register(Restaurant)
 
@@ -28,6 +29,7 @@ class DishOrderItemInline(admin.TabularInline):
 class DishesOrderAdmin(admin.ModelAdmin):
     list_display = ("__str__", "id", "status")
     inlines = (DishOrderItemInline,)
+
 
 @admin.register(RestaurantOrder)
 class RestaurantOrderAdmin(admin.ModelAdmin):

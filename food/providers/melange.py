@@ -1,6 +1,8 @@
 import enum
 from dataclasses import asdict, dataclass
+
 import httpx
+
 
 class OrderStatus(enum.StrEnum):
     NOT_STARTED = "not_started"
@@ -8,26 +10,30 @@ class OrderStatus(enum.StrEnum):
     COOKED = "cooked"
     FINISHED = "finished"
 
+
 @dataclass
 class OrderItem:
     dish: str
     quantity: int
 
+
 @dataclass
 class OrderRequestBody:
     order: list[OrderItem]
+
 
 @dataclass
 class OrderResponse:
     id: str
     status: OrderStatus
 
+
 class Provider:
     BASE_URL = "http://localhost:8001/api/orders"
 
     @classmethod
     def create_order(cls, order: OrderRequestBody):
-        
+
         print("Creating order with payload:", asdict(order))
 
         try:

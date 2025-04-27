@@ -8,8 +8,7 @@ services:
       - .:/app/
     depends_on:
       - worker
-      # - database
-
+      
   worker:
     <<: *api
     build: .

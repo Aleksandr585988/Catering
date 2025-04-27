@@ -1,13 +1,15 @@
 import enum
 from dataclasses import asdict, dataclass, field
-
 from typing import Optional
+
 import httpx
+
 
 @dataclass
 class Location:
     lat: float
     lon: float
+
 
 class OrderStatus(enum.StrEnum):
     NOT_STARTED = "not started"
