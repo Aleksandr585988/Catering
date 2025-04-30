@@ -1,0 +1,164 @@
+[
+  {
+    "model": "food.dish",
+    "pk": 1,
+    "fields": {
+      "name": "Margherita Pizza",
+      "price": 8,
+      "restaurant": 1
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 2,
+    "fields": {
+      "name": "Cheeseburger",
+      "price": 5,
+      "restaurant": 2
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 3,
+    "fields": {
+      "name": "Pepperoni Pizza",
+      "price": 9,
+      "restaurant": 1
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 4,
+    "fields": {
+      "name": "California Roll",
+      "price": 12,
+      "restaurant": 1
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 5,
+    "fields": {
+      "name": "Beef Burrito",
+      "price": 7,
+      "restaurant": 2
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 6,
+    "fields": {
+      "name": "Chicken Burger",
+      "price": 6,
+      "restaurant": 2
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 7,
+    "fields": {
+      "name": "Vegetable Pizza",
+      "price": 8,
+      "restaurant": 1
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 8,
+    "fields": {
+      "name": "Vegan Burger",
+      "price": 7,
+      "restaurant": 2
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 9,
+    "fields": {
+      "name": "Sushi Rolls",
+      "price": 15,
+      "restaurant": 1
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 10,
+    "fields": {
+      "name": "Spaghetti Carbonara",
+      "price": 10,
+      "restaurant": 1
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 11,
+    "fields": {
+      "name": "Chicken Tacos",
+      "price": 7,
+      "restaurant": 2
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 12,
+    "fields": {
+      "name": "Steak Frites",
+      "price": 14,
+      "restaurant": 1
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 13,
+    "fields": {
+      "name": "Vegetarian Burrito",
+      "price": 8,
+      "restaurant": 2
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 14,
+    "fields": {
+      "name": "Margarita Wrap",
+      "price": 6,
+      "restaurant": 2
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 15,
+    "fields": {
+      "name": "Falafel Salad",
+      "price": 9,
+      "restaurant": 2
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 16,
+    "fields": {
+      "name": "Pasta Primavera",
+      "price": 11,
+      "restaurant": 1
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 17,
+    "fields": {
+      "name": "Fish Tacos",
+      "price": 10,
+      "restaurant": 1
+    }
+  },
+  {
+    "model": "food.dish",
+    "pk": 18,
+    "fields": {
+      "name": "Pulled Pork Sandwich",
+      "price": 8,
+      "restaurant": 2
+    }
+  }
+]

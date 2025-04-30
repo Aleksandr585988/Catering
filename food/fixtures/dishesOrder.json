@@ -1,0 +1,83 @@
+[
+  {
+    "model": "food.dishesorder",
+    "pk": 1,
+    "fields": {
+      "external_order_id": "EXT123",
+      "user": 1
+    }
+  },
+  {
+    "model": "food.dishesorder",
+    "pk": 2,
+    "fields": {
+      "external_order_id": "EXT124",
+      "user": 2
+    }
+  },
+  {
+    "model": "food.dishesorder",
+    "pk": 3,
+    "fields": {
+      "external_order_id": "EXT125",
+      "user": 3
+    }
+  },
+  {
+    "model": "food.dishesorder",
+    "pk": 4,
+    "fields": {
+      "external_order_id": "EXT126",
+      "user": 2
+    }
+  },
+  {
+    "model": "food.dishesorder",
+    "pk": 5,
+    "fields": {
+      "external_order_id": "EXT127",
+      "user": 1
+    }
+  },
+  {
+    "model": "food.dishesorder",
+    "pk": 6,
+    "fields": {
+      "external_order_id": "EXT128",
+      "user": 3
+    }
+  },
+  {
+    "model": "food.dishesorder",
+    "pk": 7,
+    "fields": {
+      "external_order_id": "EXT129",
+      "user": 1
+    }
+  },
+  {
+    "model": "food.dishesorder",
+    "pk": 8,
+    "fields": {
+      "external_order_id": "EXT130",
+      "user": 2
+    }
+  },
+  {
+    "model": "food.dishesorder",
+    "pk": 9,
+    "fields": {
+      "external_order_id": "EXT131",
+      "user": 3
+    }
+  },
+  {
+    "model": "food.dishesorder",
+    "pk": 10,
+    "fields": {
+      "external_order_id": "EXT132",
+      "user": 3
+    }
+  }
+]
+
