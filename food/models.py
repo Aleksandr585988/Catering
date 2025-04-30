@@ -1,5 +1,9 @@
 from django.db import models
 from django.conf import settings
+from typing import Literal
+from .constants import RESTAURANT_TO_INTERNAL_STATUSES
+from .enums import OrderStatus
+from .enums import Restaurant as RestaurantEnum
 
 
 class Restaurant(models.Model):
@@ -50,7 +54,25 @@ class Order(models.Model):
     
     def __repr__(self) -> str:
         return super().__str__()
-
+    
+       
+    @classmethod
+    def update_from_provider_status(cls, id_: int, status: str, delivery=False) -> None:
+        print(f"[DEBUG] Called update_from_provider_status with id={id_}, status={status}, delivery={delivery}")
+        if delivery is False:            
+            if status == "finished":
+                cls.objects.filter(id=id_).update(status=OrderStatus.DRIVER_LOOKUP)
+            else:
+                cls.objects.filter(id=id_).update(
+                    status=RESTAURANT_TO_INTERNAL_STATUSES[RestaurantEnum.MELANGE][status]
+                )
+        else:
+            if status == "delivered":
+                cls.objects.filter(id=id_).update(status=OrderStatus.DELIVERED)
+            elif status == "delivery":
+                cls.objects.filter(id=id_).update(status=OrderStatus.DELIVERY)
+            else:
+                raise ValueError(f"Status {status} is not saported!!!")
 
 class RestaurantOrder(models.Model):
     class Meta:

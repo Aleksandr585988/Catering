@@ -2,14 +2,52 @@
 from rest_framework import status, viewsets, routers
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
-from .models import Dish, DishOrderItem, Order, Restaurant
+
+from .models import Dish, DishOrderItem, Order, Restaurant, RestaurantOrder
+from .services import OrderInDB
 from .serializers import DishSerializer, OrderCreateSerializer, RestaurantSerializer
 from .enums import OrderStatus
 from shared.cache import CacheService
 from .services import schedule_order
 import json
 
+@csrf_exempt
+def bueno_webhook(request):
+    print("Webhook triggered")
+
+    if request.method != 'POST':
+        return JsonResponse({"message": "Invalid method"}, status=405)
+
+    if request.content_type == "application/json":
+        try:
+            import json
+            data = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            return JsonResponse({"message": "Invalid JSON"}, status=400)
+    else:
+
+        data = request.POST.dict()
+
+    print(f"Parsed data: {data}")
+
+    external_id = data.get('id')
+    status = data.get('status')
+
+    if not external_id or not status:
+        return JsonResponse({"message": "Missing required fields"}, status=400)
+
+    order = RestaurantOrder.objects.filter(external_id=external_id).first()
+
+    if order:
+        order.status = status
+        order.save()
+        print(f"Order {external_id} updated to {status}")
+        return JsonResponse({"message": "Order status updated successfully"})
+    
+    return JsonResponse({"message": "Order not found"}, status=404)
 
 
 class FoodAPIViewSet(viewsets.GenericViewSet):
